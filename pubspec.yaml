@@ -1,0 +1,96 @@
+name: smartglass_flutter
+description: Smart Myna AI EcommercePlatform - Android, iOS & Web
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # State Management
+  provider: ^6.1.2
+
+  # Local Storage
+  shared_preferences: ^2.3.2
+
+  # UI & Fonts
+  google_fonts: ^6.2.1
+  flutter_animate: ^4.5.0
+  cupertino_icons: ^1.0.8
+
+  # Charts
+  fl_chart: ^0.69.0
+
+  # Permissions
+  permission_handler: ^11.3.1
+
+  # Bluetooth (Android + iOS only, guarded with kIsWeb)
+  flutter_blue_plus: ^1.31.16
+
+  # Camera (Android + iOS + Web)
+  camera: ^0.11.0
+
+  # Gemini AI
+  google_generative_ai: ^0.4.6
+
+  # Nearby Wi-Fi scanning on mobile
+  wifi_scan: ^0.4.1+2
+
+  # Network info
+  network_info_plus: ^6.0.0
+
+  # HTTP for extras
+  http: ^1.2.0
+  file_picker: ^8.0.3
+  # On-device ML
+  tflite_flutter: ^0.11.0
+  image: ^4.0.17
+  url_launcher: ^6.3.2
+  video_thumbnail: ^0.5.6
+  record: ^7.0.0
+  flutter_tts: ^3.8.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.3
+  flutter_native_splash: ^2.4.6
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/images/smart_myna_logo.png
+  min_sdk_android: 21
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: assets/images/smart_myna_logo.png
+    background_color: "#109E95"
+    theme_color: "#109E95"
+  windows:
+    generate: false
+  macos:
+    generate: false
+
+flutter_native_splash:
+  color: "#109E95"
+  image: assets/images/smart_myna_logo.png
+  android: true
+  ios: true
+  web: true
+  android_12:
+    color: "#109E95"
+    image: assets/images/smart_myna_logo.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/models/

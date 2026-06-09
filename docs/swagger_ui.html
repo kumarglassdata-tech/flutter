@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SmartGlass Myna AI Ecosystem API - Swagger UI</title>
+    <!-- Load Swagger UI styles from CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow-y: scroll;
+        }
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+        body {
+            margin: 0;
+            background: #fafafa;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        .header {
+            background-color: #109E95;
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .header span {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>SmartGlass Myna AI Ecosystem</h1>
+        <span>API Interactive Documentation</span>
+    </div>
+
+    <!-- Container for Swagger UI -->
+    <div id="swagger-ui"></div>
+
+    <!-- Load Swagger UI scripts from CDN -->
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js"></script>
+    
+    <script>
+        window.onload = function() {
+            // Embed the OpenAPI 3.0 specification directly so it can load instantly on double-click
+            // without violating browser file:// CORS restrictions.
+            const spec = {
+              "openapi": "3.0.3",
+              "info": {
+                "title": "SmartGlass Myna Engine Ecosystem API",
+                "description": "Technical API contract specification for the 5-Stage SmartGlass inference pipeline. This details the payload request parameters, query variables, and response schemas for Context, Behavior, Interaction, E-Commerce, and Safety Memory engines.",
+                "version": "1.0.0"
+              },
+              "servers": [
+                { "url": "https://myna-ce-dev.glassdata.ai", "description": "Ecom-Context_engine" },
+                { "url": "https://myna-be-dev.glassdata.ai", "description": "Ecom-Behaviuoral_Intent engine" },
+                { "url": "https://myna-ie-dev.glassdata.ai", "description": "Ecom-interactionSubsys_engine" },
+                { "url": "https://myna-ah-dev.glassdata.ai", "description": "Ecom-addhandler" },
+                { "url": "https://myna-sme-dev.glassdata.ai/api", "description": "Safety_and_memory agent" }
+              ],
+              "paths": {
+                "/predict": {
+                  "post": {
+                    "summary": "Stage 1: Context Predict (Context Engine)",
+                    "description": "Process raw visual frame base64 strings, GPS location coordinates, and audio levels to return scene descriptions and object bounding boxes.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "required": ["image", "audio", "location", "timestamp"],
+                            "properties": {
+                              "image": { "type": "string", "description": "Base64 encoded JPEG or PNG video frame.", "example": "base64EncodedString..." },
+                              "audio": { "type": "array", "items": { "type": "number" }, "description": "Micro-samples or float array representing acoustic slots.", "example": [0.12, 0.45, 0.08] },
+                              "location": {
+                                "type": "object",
+                                "required": ["latitude", "longitude"],
+                                "properties": {
+                                  "latitude": { "type": "number", "format": "float", "example": 37.7749 },
+                                  "longitude": { "type": "number", "format": "float", "example": -122.4194 }
+                                }
+                              },
+                              "timestamp": { "type": "integer", "format": "int64", "description": "Ingestion timestamp epoch milliseconds.", "example": 1717320000000 }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Context understanding generated successfully.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "scene_context": {
+                                  "type": "object",
+                                  "properties": {
+                                    "scene_label": { "type": "string", "example": "User walking in retail store" },
+                                    "scene_confidence": { "type": "number", "example": 0.92 }
+                                  }
+                                },
+                                "tracked_objects": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "object_id": { "type": "integer", "example": 102 },
+                                      "label": { "type": "string", "example": "organic_milk_1l" },
+                                      "bbox_xyxy": { "type": "array", "items": { "type": "number" }, "example": [100.0, 150.0, 300.0, 450.0] },
+                                      "confidence": { "type": "number", "example": 0.94 }
+                                    }
+                                  }
+                                },
+                                "product_salience": {
+                                  "type": "object",
+                                  "additionalProperties": { "type": "number" },
+                                  "example": { "102": 0.925 }
+                                },
+                                "attention_grounding": {
+                                  "type": "object",
+                                  "properties": {
+                                    "attention_target": { "type": "string", "example": "organic_milk_1l" },
+                                    "attention_confidence": { "type": "number", "example": 0.91 }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "/behavior": {
+                  "post": {
+                    "summary": "Stage 2: Behavior & Intent Classification (Behavior Engine)",
+                    "description": "Run recurrent neural classification over sliding context frames to evaluate gaze grounding alignment and voice NLU intent categories.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "required": ["context_data", "timestamp"],
+                            "properties": {
+                              "context_data": { "type": "object", "description": "Structured output from /predict (Context Engine)" },
+                              "timestamp": { "type": "integer", "format": "int64", "example": 1717320000000 }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Intent evaluation completed.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "timestamp_ms": { "type": "integer", "format": "int64", "example": 1717320000000 },
+                                "gaze_grounding": {
+                                  "type": "object",
+                                  "properties": {
+                                    "grounded_target": { "type": "string", "example": "organic_milk_1l" },
+                                    "alignment_score": { "type": "number", "example": 0.88 }
+                                  }
+                                },
+                                "voice_nlu": {
+                                  "type": "object",
+                                  "properties": {
+                                    "active_intent": { "type": "string", "example": "queryProduct" },
+                                    "slots": {
+                                      "type": "object",
+                                      "additionalProperties": { "type": "string" },
+                                      "example": { "product_name": "organic_milk_1l", "attribute": "price" }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "/process": {
+                  "post": {
+                    "summary": "Stage 3: Dialogue Processing (Interaction Subsystem)",
+                    "description": "Process conversational FSM transitions and trigger text responses.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "required": ["intent", "gaze_target", "timestamp_ms"],
+                            "properties": {
+                              "intent": { "type": "string", "example": "queryProduct" },
+                              "gaze_target": { "type": "string", "example": "organic_milk_1l" },
+                              "timestamp_ms": { "type": "integer", "format": "int64", "example": 1717320000000 }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Dialogue utterance updated.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "dialogue_mode": { "type": "string", "example": "RECOMMENDATION" },
+                                "last_utterance": { "type": "string", "example": "That organic milk is highly rated! Would you like to check details?" },
+                                "bcp": {
+                                  "type": "object",
+                                  "properties": {
+                                    "behavioral_state": { "type": "string", "example": "purchase_consideration" },
+                                    "relevance_score": { "type": "number", "example": 0.885 },
+                                    "gate_open": { "type": "boolean", "example": true }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "/query": {
+                  "post": {
+                    "summary": "Stage 4: E-Commerce Catalog Listings (Ecom Ad Handler)",
+                    "description": "Search database inventory listings and target user deals matching grounded gaze targets.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "required": ["salient_objects", "interaction_mode"],
+                            "properties": {
+                              "salient_objects": { "type": "array", "items": { "type": "string" }, "example": ["organic_milk_1l"] },
+                              "interaction_mode": { "type": "string", "example": "RECOMMENDATION" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Catalog search results fetched.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "status": { "type": "string", "example": "success" },
+                                "suggestions": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": { "type": "string", "example": "milk_102" },
+                                      "name": { "type": "string", "example": "Organic Whole Milk 1L" },
+                                      "price": { "type": "number", "format": "double", "example": 3.49 },
+                                      "image_url": { "type": "string", "example": "https://assets.glassdata.ai/products/milk_102.png" }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "/store": {
+                  "post": {
+                    "summary": "Stage 5a: Safety Memory - Store Preferences",
+                    "description": "Store preferences or safety constraints (e.g. medical limits, allergies) to prevent unsafe recommendations.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "content": { "type": "string", "example": "User is allergic to latex" },
+                              "memory_type": { "type": "string", "example": "allergy" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Preferences persisted successfully.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "status": { "type": "string", "example": "success" }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "/recall": {
+                  "post": {
+                    "summary": "Stage 5b: Safety Memory - Recall preferences",
+                    "description": "Query long-term memory store to detect user constraints.",
+                    "requestBody": {
+                      "required": true,
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "required": ["query"],
+                            "properties": {
+                              "query": { "type": "string", "example": "Is the user allergic to anything?" },
+                              "top_k": { "type": "integer", "example": 3 },
+                              "confidence_threshold": { "type": "number", "example": 0.4 }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "responses": {
+                      "200": {
+                        "description": "Safety memories recalled.",
+                        "content": {
+                          "application/json": {
+                            "schema": {
+                              "type": "object",
+                              "properties": {
+                                "status": { "type": "string", "example": "success" },
+                                "semantic_memories": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "memory_id": { "type": "string", "example": "mem_4a8f9" },
+                                      "content": { "type": "string", "example": "User allergic to latex" },
+                                      "memory_type": { "type": "string", "example": "allergy" },
+                                      "relevance_score": { "type": "number", "example": 0.95 }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            };
+
+            const ui = SwaggerUIBundle({
+                spec: spec,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+            });
+            window.ui = ui;
+        };
+    </script>
+</body>
+</html>
