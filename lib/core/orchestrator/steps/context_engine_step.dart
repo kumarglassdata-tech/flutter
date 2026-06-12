@@ -17,10 +17,10 @@ class ContextEngineStep extends PipelineStep<UnifiedInput, ContextEngineOutput> 
     Map<String, dynamic> sharedState,
   ) async {
 
-    final imageBytes = input.videoFrame?.bytes ?? Uint8List(0);
-    final audioLevel = input.audioChunk?.samples.firstOrNull ?? 0.0;
-    final lat = input.location?.latitude ?? 0.0;
-    final lon = input.location?.longitude ?? 0.0;
+    final imageBytes = input.imageBytes ?? Uint8List(0);
+    final audioLevel = 0.0; // No easy way to get audio level from bytes directly here without decoding
+    final lat = input.latitude ?? 0.0;
+    final lon = input.longitude ?? 0.0;
 
     try {
       final response = await _client.sendContext(

@@ -122,32 +122,37 @@ class NormalUserCards extends StatelessWidget {
             const SizedBox(height: 12),
             ...suggestions.take(2).map((p) => Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  if (p.imageUrl.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(p.imageUrl, width: 40, height: 40, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 40),
+              child: InkWell(
+                onTap: () => _launchWithWait(context, p.id),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    children: [
+                      if (p.imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(p.imageUrl, width: 40, height: 40, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 40),
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
-                    ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded, color: AppTheme.primary, size: 20),
+                        onPressed: () => _launchWithWait(context, p.id),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.open_in_new_rounded, color: AppTheme.primary, size: 20),
-                    onPressed: () {
-                      _launchWithWait(context, p.id);
-                    },
-                  ),
-                ],
+                ),
               ),
             )).toList(),
           ],

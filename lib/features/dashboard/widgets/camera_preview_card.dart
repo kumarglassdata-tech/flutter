@@ -58,22 +58,40 @@ class CameraPreviewCard extends StatelessWidget {
             ),
           ),
           isReady
-              ? AspectRatio(
-                  aspectRatio: controller.value.aspectRatio,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(child: CameraPreview(controller)),
-                      if (lastContextOutput != null)
-                        Positioned.fill(
-                          child: BoundingBoxOverlay(
-                            lastContextOutput: lastContextOutput,
-                          ),
+              ? SizedBox(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.45,
+                  child: ClipRect(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: SizedBox(
+                        width: (controller.value.previewSize?.height ?? 1080.0) < (controller.value.previewSize?.width ?? 1920.0) ? (controller.value.previewSize?.height ?? 1080.0) : (controller.value.previewSize?.width ?? 1920.0),
+                        height: (controller.value.previewSize?.height ?? 1080.0) > (controller.value.previewSize?.width ?? 1920.0) ? (controller.value.previewSize?.height ?? 1080.0) : (controller.value.previewSize?.width ?? 1920.0),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(child: CameraPreview(controller)),
+                            if (lastContextOutput != null)
+                              Positioned.fill(
+                                child: RepaintBoundary(
+                                  child: BoundingBoxOverlay(
+                                    lastContextOutput: lastContextOutput,
+                                    imageSize: Size(
+                                      (controller.value.previewSize?.height ?? 1080.0) < (controller.value.previewSize?.width ?? 1920.0) ? (controller.value.previewSize?.height ?? 1080.0) : (controller.value.previewSize?.width ?? 1920.0),
+                                      (controller.value.previewSize?.height ?? 1080.0) > (controller.value.previewSize?.width ?? 1920.0) ? (controller.value.previewSize?.height ?? 1080.0) : (controller.value.previewSize?.width ?? 1920.0)
+                                    ),
+                                    isMirrored: cameraService.preferredLens == CameraLensDirection.front,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
+                      ),
+                    ),
                   ),
                 )
-              : AspectRatio(
-                  aspectRatio: 16 / 9,
+              : SizedBox(
+                  width: double.infinity,
+                  height: MediaQuery.of(context).size.height * 0.5,
                   child: Container(
                     color: const Color(0xFFF8FAFC),
                     alignment: Alignment.center,

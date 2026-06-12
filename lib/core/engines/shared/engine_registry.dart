@@ -6,7 +6,10 @@ class EngineRegistry {
 
   static const String contextUrl = EnvConfig.contextEngineUrl;
   static const String interactionSubUrl = EnvConfig.interactionSubUrl;
-  static const String ecomHandlerUrl = EnvConfig.ecomHandlerUrl;
+  static const String actionHubBuyUrl = EnvConfig.actionHubBuyUrl;
+  static const String actionHubRecommendUrl = EnvConfig.actionHubRecommendUrl;
+  static const String actionHubLifebalanceUrl = EnvConfig.actionHubLifebalanceUrl;
+  static const String actionHubAnalyzeUrl = EnvConfig.actionHubAnalyzeUrl;
   static const String behaviourIntentUrl = EnvConfig.behaviourIntentUrl;
   static const String safetyMemoryUrl = EnvConfig.safetyMemoryUrl;
 
@@ -17,12 +20,18 @@ class EngineRegistry {
         return contextUrl;
       case 'interaction':
         return interactionSubUrl;
-      case 'ecom':
-        return ecomHandlerUrl;
+      case 'buy':
+        return actionHubBuyUrl;
+      case 'recommend':
+        return actionHubRecommendUrl;
+      case 'lifebalance':
+        return actionHubLifebalanceUrl;
+      case 'analyze':
+        return actionHubAnalyzeUrl;
       case 'behavior':
-        return behaviourIntentUrl.isNotEmpty ? behaviourIntentUrl : 'http://3.6.10.81:8502';
+        return behaviourIntentUrl;
       case 'memory':
-        return safetyMemoryUrl.isNotEmpty ? safetyMemoryUrl : 'http://3.6.10.81:8505';
+        return safetyMemoryUrl;
       default:
         return ApiConfig.baseUrl;
     }

@@ -50,7 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Image.asset(
-                  'assets/images/smart_myna_logo.png',
+                  'assets/images/smart_myna_logo.jpg',
                   fit: BoxFit.cover,
                 ),
               )

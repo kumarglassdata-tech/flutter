@@ -7,10 +7,11 @@ class RequestMappers {
   RequestMappers._();
 
   static Map<String, dynamic> toContextRequest(UnifiedInput input) {
-    final imageBytes = input.videoFrame?.bytes ?? Uint8List(0);
-    final audioLevel = input.audioChunk?.samples.firstOrNull ?? 0.0;
-    final lat = input.location?.latitude ?? 0.0;
-    final lon = input.location?.longitude ?? 0.0;
+    final imageBytes = input.imageBytes ?? Uint8List(0);
+    final audioLevel = 0.0;
+    final lat = input.latitude ?? 0.0;
+    final lon = input.longitude ?? 0.0;
+
     return {
       'image': base64Encode(imageBytes),
       'audio': [audioLevel],
@@ -23,18 +24,21 @@ class RequestMappers {
   }
 
   static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon}) {
-    return {
-      'context_data': contextOutput.raw,
-      'location': {
-        'latitude': lat ?? 0.0,
-        'longitude': lon ?? 0.0,
-      },
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    };
+    return contextOutput.raw;
   }
 
-  static Map<String, dynamic> toInteractionRequest(BIEFrame bieFrame) {
-    return bieFrame.raw;
+  static Map<String, dynamic> toInteractionRequest(BIEFrame bieFrame, {double? lat, double? lon}) {
+    return {
+      "behavioral_state": bieFrame.intent.isNotEmpty ? bieFrame.intent : "passive_browsing",
+      "state_confidence": bieFrame.confidence,
+      "relevance_score": bieFrame.salienceScore,
+      "hesitation_score": bieFrame.raw['hesitation_score'] ?? 0.0,
+      "comparison_detected": bieFrame.raw['comparison_detected'] ?? false,
+      "comparison_objects": bieFrame.raw['comparison_objects'] ?? [],
+      "gate_open": true,
+      "cpu_temp": 32.0,
+      "throttled": false
+    };
   }
 
   static Map<String, dynamic> toEcomRequest(BIEFrame bieFrame) {
@@ -44,14 +48,15 @@ class RequestMappers {
         'salience_score': bieFrame.salienceScore,
         'class_name': bieFrame.gazeTarget,
       },
-      'top_salient_objects': [
+      'top_salient_objects': bieFrame.raw['top_salient_objects'] ?? [
         {
-          'object_id': 'obj_123',
+          'object_id': bieFrame.gazeTarget,
           'class_name': bieFrame.gazeTarget,
           'salience_score': bieFrame.salienceScore,
         }
       ],
       'relevance_score': bieFrame.salienceScore,
+      'behavioral_state': bieFrame.intent,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
     };
   }

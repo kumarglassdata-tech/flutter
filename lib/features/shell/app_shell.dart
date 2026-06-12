@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:smartglass_flutter/core/providers/auth_provider.dart';
+import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartglass_flutter/features/shell/widgets/myna_assistant_bottom_sheet.dart';
 
 class AppShell extends StatefulWidget {
   final Widget child;
@@ -48,6 +50,40 @@ class _AppShellState extends State<AppShell> {
             _SideRail(currentLocation: location, auth: auth),
           Expanded(child: widget.child),
         ],
+      ),
+      floatingActionButton: GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (ctx) => const MynaAssistantBottomSheet(),
+          );
+        },
+        onLongPressStart: (_) => context.read<SessionProvider>().audioStreamManager.startRecording(),
+        onLongPressEnd: (_) => context.read<SessionProvider>().audioStreamManager.stopRecording(),
+        onLongPressCancel: () => context.read<SessionProvider>().audioStreamManager.stopRecording(),
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF2563EB),
+            boxShadow: [
+              BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+            ],
+          ),
+          child: Center(
+            child: ClipOval(
+              child: Image.asset(
+                "assets/images/myna_bot.png",
+                width: 44,
+                height: 44,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
       ),
       // Bottom nav for mobile
       bottomNavigationBar: MediaQuery.of(context).size.width < 720

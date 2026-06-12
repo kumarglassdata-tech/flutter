@@ -7,7 +7,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:wifi_scan/wifi_scan.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
 import 'package:smartglass_flutter/core/services/audio_service.dart';
@@ -23,6 +23,7 @@ import 'package:smartglass_flutter/core/sources/mock/mock_source_adapter.dart';
 import 'package:smartglass_flutter/core/sources/video_upload/video_upload_source_adapter.dart';
 import 'package:smartglass_flutter/core/models/engine_status.dart';
 import 'package:smartglass_flutter/core/engines/shared/engine_registry.dart';
+import 'package:smartglass_flutter/core/engines/shared/mappers/request_mappers.dart';
 
 import 'package:smartglass_flutter/core/engines/shared/circuit_breaker.dart';
 import 'package:smartglass_flutter/core/engines/context/context_client.dart';
@@ -31,6 +32,7 @@ import 'package:smartglass_flutter/core/engines/interaction/interaction_client.d
 import 'package:smartglass_flutter/core/engines/ecom/ecom_client.dart';
 import 'package:smartglass_flutter/core/engines/memory/memory_client.dart';
 import 'package:smartglass_flutter/core/models/engine_models.dart';
+import 'package:smartglass_flutter/core/models/domain/action_hub_result.dart';
 import 'package:smartglass_flutter/core/network/audio_client.dart' as smartglass_audio_client;
 
 import 'package:smartglass_flutter/core/orchestrator/pipeline_coordinator.dart';
@@ -38,6 +40,8 @@ import 'package:smartglass_flutter/core/orchestrator/stream_coordinator.dart';
 import 'package:smartglass_flutter/core/diagnostics/telemetry_service.dart';
 import 'package:smartglass_flutter/core/diagnostics/health_monitor.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:smartglass_flutter/core/services/audio_stream_manager.dart';
+import 'package:smartglass_flutter/core/config/env_config.dart';
 
 // ---------------------------------------------------------------------------
 // Models (Maintained for Backwards Compatibility)
@@ -96,6 +100,7 @@ class SessionState {
   final double audioLevel;
   final double? latitude;
   final double? longitude;
+  final String? city;
   final bool metaSdkAvailable;
   final bool usingRealMetaStream;
   final Uint8List? metaFrameBytes;
@@ -134,6 +139,7 @@ class SessionState {
     this.audioLevel = 0.0,
     this.latitude,
     this.longitude,
+    this.city,
     this.metaSdkAvailable = false,
     this.usingRealMetaStream = false,
     this.metaFrameBytes,
@@ -147,6 +153,16 @@ class SessionState {
     this.engineStatuses = const {},
     this.apiHealths = const [],
   });
+
+  ActionHubResult? get actionHubResult {
+    if (lastEcomResponse == null) return null;
+    return ActionHubResult(
+      actionEndpoint: lastEcomResponse!.status, // Not perfect but passes the string
+      generatedPayload: lastEcomResponse!.raw,
+      productLink: lastEcomResponse!.suggestions.isNotEmpty ? lastEcomResponse!.suggestions.first.id : null,
+      imageUrl: lastEcomResponse!.suggestions.isNotEmpty ? lastEcomResponse!.suggestions.first.imageUrl : null,
+    );
+  }
 
   SessionState copyWith({
     bool? isSessionActive,
@@ -172,6 +188,7 @@ class SessionState {
     double? audioLevel,
     double? latitude,
     double? longitude,
+    String? city,
     String? lastHealthMessage,
     bool? metaSdkAvailable,
     bool? usingRealMetaStream,
@@ -210,6 +227,7 @@ class SessionState {
       audioLevel: audioLevel ?? this.audioLevel,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      city: city ?? this.city,
       lastHealthMessage: lastHealthMessage ?? this.lastHealthMessage,
       metaSdkAvailable: metaSdkAvailable ?? this.metaSdkAvailable,
       usingRealMetaStream: usingRealMetaStream ?? this.usingRealMetaStream,
@@ -250,6 +268,7 @@ class SessionProvider extends ChangeNotifier {
   late final PipelineCoordinator pipelineCoordinator;
   late final StreamCoordinator streamCoordinator;
   late final HealthMonitor healthMonitor;
+  late final AudioStreamManager audioStreamManager;
   final FlutterTts flutterTts = FlutterTts()
   ..setVolume(1.0)
   ..setSpeechRate(0.5)
@@ -270,10 +289,40 @@ class SessionProvider extends ChangeNotifier {
         _audioService = audioService ?? AudioService(),
         _locationService = locationService ?? LocationService() {
     _cameraService.addListener(_syncNewArchitecture);
+    _loadSavedProducts();
     _audioService.addListener(_syncNewArchitecture);
     _locationService.addListener(_syncNewArchitecture);
 
     _initNewArchitecture();
+  }
+
+  Future<void> _loadSavedProducts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final productsStr = prefs.getString('saved_products');
+      if (productsStr != null) {
+        final List<dynamic> decoded = jsonDecode(productsStr);
+        final List<EcomAdProduct> loaded = decoded
+            .map((e) => EcomAdProduct.fromJson(e as Map<String, dynamic>))
+            .toList();
+        if (loaded.isNotEmpty) {
+          _state = _state.copyWith(suggestedProducts: loaded);
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      print('Failed to load saved products: $e');
+    }
+  }
+
+  Future<void> _saveProducts(List<EcomAdProduct> products) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final productsJson = products.map((p) => p.toJson()).toList();
+      await prefs.setString('saved_products', jsonEncode(productsJson));
+    } catch (e) {
+      print('Failed to save products: $e');
+    }
   }
 
   void _initNewArchitecture() {
@@ -336,7 +385,77 @@ class SessionProvider extends ChangeNotifier {
       sourceManager: sourceManager,
     );
 
-    // 3. Set up listeners to propagate changes to UI
+    // 3. Set up AudioStreamManager
+    audioStreamManager = AudioStreamManager();
+    audioStreamManager.init().then((_) {
+      audioStreamManager.connect(EnvConfig.interactionWsUrl);
+    });
+
+    audioStreamManager.transcriptStream.listen((text) async {
+      if (text.isNotEmpty && text != _lastSpokenUtterance) {
+        _lastSpokenUtterance = text;
+        // DO NOT echo the user's text: flutterTts.speak(_lastSpokenUtterance);
+      }
+
+      if (_state.lastInteractionResponse != null) {
+        final current = _state.lastInteractionResponse!;
+        final updated = InteractionResponse(
+          dialogueMode: current.dialogueMode,
+          llmGateStatus: current.llmGateStatus,
+          lastUtterance: text,
+          bcp: current.bcp,
+          raw: current.raw,
+        );
+        _state = _state.copyWith(lastInteractionResponse: updated);
+        notifyListeners();
+      } else {
+        final newResp = InteractionResponse(
+          dialogueMode: 'speak',
+          llmGateStatus: 'pass',
+          lastUtterance: text,
+          bcp: BCPPayload.fromJson({}),
+          raw: {'utterance': text},
+        );
+        _state = _state.copyWith(lastInteractionResponse: newResp);
+        notifyListeners();
+      }
+    });
+
+    audioStreamManager.statusStream.listen((statusData) {
+      final interactionResponse = InteractionResponse.fromJson(statusData);
+      _state = _state.copyWith(lastInteractionResponse: interactionResponse);
+
+      if (interactionResponse.lastUtterance.isNotEmpty && interactionResponse.lastUtterance != _lastSpokenUtterance) {
+        _lastSpokenUtterance = interactionResponse.lastUtterance;
+        flutterTts.speak(_lastSpokenUtterance);
+      }
+
+      // Force update lastBIEFrame so the E-com UI and pipeline can see the new salience score if BCP is present
+      final bcpJson = statusData['bcp'] ?? <String, dynamic>{};
+      if (bcpJson.isNotEmpty) {
+        final audioBieFrame = BIEFrame.fromJson(bcpJson);
+        _state = _state.copyWith(lastBIEFrame: audioBieFrame);
+        
+        if (audioBieFrame.salienceScore >= 0.5) {
+          _addLog('Audio intent triggered Ecom. Salience: ${audioBieFrame.salienceScore}');
+          final sharedState = <String, dynamic>{};
+          pipelineCoordinator.ecomStep.execute(audioBieFrame, sharedState).then((ecomRes) {
+            if (ecomRes.isSuccess && ecomRes.output != null) {
+               _state = _state.copyWith(
+                 lastEcomResponse: ecomRes.output,
+                 suggestedProducts: ecomRes.output!.suggestions,
+               );
+               notifyListeners();
+            }
+          });
+        }
+      }
+      notifyListeners();
+    });
+
+    interactionClient.setAudioStreamManager(audioStreamManager);
+
+    // 4. Set up listeners to propagate changes to UI
     sourceManager.addListener(_syncNewArchitecture);
     streamCoordinator.addListener(_syncNewArchitecture);
     healthMonitor.addListener(_syncNewArchitecture);
@@ -609,11 +728,13 @@ class SessionProvider extends ChangeNotifier {
         await sourceManager.switchSource(SourceType.phone);
       }
 
+      healthMonitor.resetAllCircuits();
+      await audioStreamManager.init();
+      audioStreamManager.connect(EnvConfig.interactionWsUrl);
       streamCoordinator.start();
       _addLog('Real-time ingestion pipeline running.');
 
-      // Start continuous audio processing loop
-      _startAudioProcessingLoop();
+      // Removed HTTP audio loop as WebSockets are used now.
     } catch (e) {
       _addLog('Stream Coordinator start failed: $e');
     } finally {
@@ -622,116 +743,10 @@ class SessionProvider extends ChangeNotifier {
     }
   }
 
-  bool _isAudioLoopRunning = false;
-
-  void _startAudioProcessingLoop() async {
-    if (_isAudioLoopRunning) return;
-    _isAudioLoopRunning = true;
-    _audioService.start();
-
-    DateTime? lastVoiceTime;
-    DateTime chunkStartTime = DateTime.now();
-
-    while (_isAudioLoopRunning) {
-      await Future.delayed(const Duration(milliseconds: 200));
-      if (!_isAudioLoopRunning) break;
-
-      final level = _audioService.level;
-      if (level > 0.1) {
-        lastVoiceTime = DateTime.now();
-      }
-
-      final now = DateTime.now();
-      final silenceDuration = lastVoiceTime != null ? now.difference(lastVoiceTime).inMilliseconds : 0;
-      final chunkDuration = now.difference(chunkStartTime).inMilliseconds;
-
-      // Send chunk if there is 1.5s of silence after speaking, OR if chunk reaches 5 seconds
-      if ((lastVoiceTime != null && silenceDuration > 1500) || chunkDuration > 5000) {
-        final wavBytes = await _audioService.stopAndGetBytes();
-        if (wavBytes != null && wavBytes.isNotEmpty && lastVoiceTime != null) {
-          _sendAudioChunk(wavBytes);
-        }
-        lastVoiceTime = null;
-        chunkStartTime = DateTime.now();
-        
-        if (_isAudioLoopRunning) {
-          await _audioService.start(); // Restart recording
-        }
-      }
-    }
-  }
-
-  Future<void> _sendAudioChunk(Uint8List bytes) async {
-    try {
-      final bieFrame = _state.lastBIEFrame;
-      if (bieFrame == null) {
-        _addLog('No behavior frame available for audio processing');
-        return;
-      }
-      
-      final payload = Map<String, dynamic>.from(bieFrame.raw);
-      payload['audio_base64'] = base64Encode(bytes);
-      
-      var baseUrl = EngineRegistry.interactionSubUrl;
-      // If baseUrl already includes /process, replace it
-      if (baseUrl.endsWith('/process')) {
-        baseUrl = baseUrl.substring(0, baseUrl.length - '/process'.length);
-      }
-      if (!baseUrl.endsWith('/')) baseUrl += '/';
-      final url = Uri.parse('${baseUrl}process_audio');
-
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 15));
-
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        _addLog('Audio sent successfully.');
-        
-        final interactionResponse = InteractionResponse.fromJson(data);
-        final utterance = interactionResponse.lastUtterance;
-        
-        // Also update the session state with the latest interaction response so the E-com handler has access to the updated BCP!
-        _state = _state.copyWith(lastInteractionResponse: interactionResponse);
-        
-        // Force update lastBIEFrame so the E-com UI and pipeline can see the new salience score
-        final bcpJson = data['bcp'] ?? <String, dynamic>{};
-        if (bcpJson.isNotEmpty) {
-          final audioBieFrame = BIEFrame.fromJson(bcpJson);
-          _state = _state.copyWith(lastBIEFrame: audioBieFrame);
-          
-          if (audioBieFrame.salienceScore >= 0.5) {
-            _addLog('Audio intent triggered Ecom. Salience: \${audioBieFrame.salienceScore}');
-            final sharedState = <String, dynamic>{};
-            final ecomRes = await pipelineCoordinator.ecomStep.execute(audioBieFrame, sharedState);
-            if (ecomRes.isSuccess && ecomRes.output != null) {
-               _state = _state.copyWith(
-                 lastEcomResponse: ecomRes.output,
-                 suggestedProducts: ecomRes.output!.suggestions,
-               );
-            }
-          }
-        }
-        
-        notifyListeners();
-        
-        if (utterance.isNotEmpty) {
-          await flutterTts.speak(utterance);
-        }
-      } else {
-        throw Exception('Audio server error: HTTP ${response.statusCode} - ${response.body}');
-      }
-    } catch (e) {
-      _addLog('Failed to send audio chunk: $e');
-    }
-  }
-
   Future<void> stopRuntime() async {
     _addLog('Stopping real-time stream coordinator...');
-    _isAudioLoopRunning = false;
     await _audioService.stop();
+    await audioStreamManager.disconnect();
     streamCoordinator.stop();
     _state = _state.copyWith(
       isSessionActive: false,
@@ -841,8 +856,9 @@ class SessionProvider extends ChangeNotifier {
     }
   }
 
-  bool get isAudioLoopRunning => _isAudioLoopRunning;
+
   String _lastSpokenUtterance = '';
+  DateTime _lastNotifyTime = DateTime.now();
 
   void _syncNewArchitecture() {
     final telemetry = telemetryService;
@@ -874,15 +890,20 @@ class SessionProvider extends ChangeNotifier {
         interactionOutput.lastUtterance.isNotEmpty && 
         interactionOutput.lastUtterance != _lastSpokenUtterance) {
       _lastSpokenUtterance = interactionOutput.lastUtterance;
-      flutterTts.speak(_lastSpokenUtterance);
+      flutterTts.speak(_lastSpokenUtterance); // RE-ENABLED: Fallback for missing WebSocket PCM audio
     }
 
     final topSalient = (contextOutput?.topSalientObjects != null && contextOutput!.topSalientObjects.isNotEmpty)
         ? contextOutput.topSalientObjects
         : _state.topSalientObjects;
+        
     final suggested = (ecomOutput?.suggestions != null && ecomOutput!.suggestions.isNotEmpty)
         ? ecomOutput.suggestions
         : _state.suggestedProducts;
+
+    if (ecomOutput?.suggestions != null && ecomOutput!.suggestions.isNotEmpty) {
+      _saveProducts(ecomOutput.suggestions);
+    }
 
     final rawStatuses = result['engine_status'] as Map<String, EngineStatus>? ?? const <String, EngineStatus>{};
 
@@ -892,6 +913,9 @@ class SessionProvider extends ChangeNotifier {
     _state = _state.copyWith(
       metaFrameBytes: frameBytes,
       isSessionActive: streamCoordinator.isRunning,
+      latitude: _locationService.latitude,
+      longitude: _locationService.longitude,
+      city: _locationService.city,
       isDegraded: health.status == SourceHealthStatus.degraded ||
           healthMonitor.contextState == CircuitState.open ||
           healthMonitor.behaviorState == CircuitState.open ||
@@ -918,8 +942,6 @@ class SessionProvider extends ChangeNotifier {
       modelOutputs: {},
       modelContext: _makeJsonEncodable(result),
       audioLevel: _audioService.level,
-      latitude: _locationService.latitude,
-      longitude: _locationService.longitude,
       lastHealthMessage: health.message,
       lastContextOutput: contextOutput,
       lastBIEFrame: behaviorOutput,
@@ -930,7 +952,12 @@ class SessionProvider extends ChangeNotifier {
       suggestedProducts: suggested,
       engineStatuses: rawStatuses,
     );
-    notifyListeners();
+
+    final now = DateTime.now();
+    if (now.difference(_lastNotifyTime).inMilliseconds > 200) {
+      _lastNotifyTime = now;
+      notifyListeners();
+    }
   }
 
   Map<String, dynamic> _makeJsonEncodable(Map<String, dynamic> input) {

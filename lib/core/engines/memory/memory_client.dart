@@ -32,7 +32,8 @@ class MemoryClient {
       final Uri url;
       final bool isReleaseGateway = resolvedUrl.contains('glassdata.ai');
       if (isReleaseGateway) {
-        url = Uri.parse('https://myna-sme-dev.glassdata.ai/api/release?text=${Uri.encodeComponent(payload['query'] ?? '')}');
+        final baseUrlStr = resolvedUrl.split('?').first;
+        url = Uri.parse('$baseUrlStr?text=${Uri.encodeComponent(payload['query'] ?? '')}');
       } else {
         if (resolvedUrl.endsWith('/') && !resolvedUrl.contains('/api/')) {
           url = Uri.parse('${resolvedUrl}api/v1/memory/all');
@@ -52,6 +53,11 @@ class MemoryClient {
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
+            if (fallbackToMock) {
+              return {
+                "past_interactions": []
+              };
+            }
             throw Exception('Safety Memory recall error: HTTP ${response.statusCode}');
           }
 
@@ -62,6 +68,11 @@ class MemoryClient {
           return responseMap;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
+            if (fallbackToMock) {
+              return {
+                "past_interactions": []
+              };
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

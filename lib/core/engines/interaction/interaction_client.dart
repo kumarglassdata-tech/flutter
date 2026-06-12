@@ -5,68 +5,41 @@ import 'package:smartglass_flutter/core/engines/shared/circuit_breaker.dart';
 import 'package:smartglass_flutter/core/engines/shared/engine_registry.dart';
 import 'package:smartglass_flutter/core/engines/shared/retry_policy.dart';
 
+import 'package:smartglass_flutter/core/services/audio_stream_manager.dart';
+
 class InteractionClient {
-  final http.Client _client;
   final CircuitBreaker circuitBreaker;
   final RetryPolicy _retryPolicy;
-
   final bool fallbackToMock;
+  AudioStreamManager? audioStreamManager;
 
   InteractionClient({
-    http.Client? client,
     RetryPolicy? retryPolicy,
     this.fallbackToMock = false,
-  })  : _client = client ?? http.Client(),
-        _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
+  })  : _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
         circuitBreaker = CircuitBreaker(name: 'InteractionSubsystem');
+
+  void setAudioStreamManager(AudioStreamManager manager) {
+    audioStreamManager = manager;
+  }
 
   Future<Map<String, dynamic>> sendInteraction(Map<String, dynamic> requestPayload) async {
     return circuitBreaker.execute(() async {
-      final body = jsonEncode(requestPayload);
-      final baseUrl = EngineRegistry.interactionSubUrl;
-      final Uri url;
-      final bool isReleaseGateway = baseUrl.contains('release');
-      if (isReleaseGateway) {
-        url = Uri.parse('$baseUrl?text=${Uri.encodeComponent(requestPayload['utterance'] ?? '')}');
-      } else {
-        if (baseUrl.endsWith('/') && !baseUrl.contains('/process')) {
-          url = Uri.parse('${baseUrl}process');
-        } else if (!baseUrl.contains('/process') && baseUrl.contains('glassdata.ai')) {
-          url = Uri.parse('$baseUrl/process');
-        } else {
-          url = Uri.parse(baseUrl);
-        }
+      if (audioStreamManager == null) {
+        throw Exception('AudioStreamManager is not initialized for InteractionClient.');
       }
-
-      var attempt = 0;
-      while (true) {
-        attempt++;
-        try {
-          final http.Response response;
-          if (isReleaseGateway) {
-            response = await _client.get(
-              url,
-            ).timeout(const Duration(seconds: 8));
-          } else {
-            response = await _client.post(
-              url,
-              headers: {'Content-Type': 'application/json'},
-              body: body,
-            ).timeout(const Duration(seconds: 8));
-          }
-
-          if (response.statusCode < 200 || response.statusCode >= 300) {
-            throw Exception('Interaction Subsystem server error: HTTP ${response.statusCode}');
-          }
-
-          return jsonDecode(response.body) as Map<String, dynamic>;
-        } catch (e) {
-          if (attempt > _retryPolicy.attempts) {
-            rethrow;
-          }
-          await Future.delayed(_retryPolicy.backoffDelay(attempt));
-        }
-      }
+      
+      // Fire and forget via WebSocket
+      audioStreamManager!.sendTelemetry(requestPayload);
+      
+      // Return a pending or mock status since actual response comes asynchronously via WebSocket
+      return <String, dynamic>{
+        'dialogue_mode': 'query',
+        'llm_gate_status': 'pass',
+        'last_utterance': '',
+        'bcp': <String, dynamic>{},
+        '_info': 'Async via WebSocket'
+      };
     });
   }
 }

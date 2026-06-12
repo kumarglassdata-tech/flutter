@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             const SizedBox(height: 28),
 
-            // Recommendations
+            // Recommendations & Price Comparison
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -296,73 +296,185 @@ class _HomeScreenState extends State<HomeScreen> {
                         .titleMedium
                         ?.copyWith(fontWeight: FontWeight.w700)),
                 TextButton(
-                    onPressed: () {},
+                    onPressed: () => auth.isLoggedIn
+                        ? context.push('/interested')
+                        : context.go('/login?target=${Uri.encodeComponent('/interested')}'),
                     child: const Text('See all')),
               ],
             ).animate().fadeIn(delay: 800.ms),
 
             const SizedBox(height: 16),
 
-            SizedBox(
-              height: 200,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  ...salientObjects.map((obj) {
-                    return _ProductCard(
-                      name: obj.isNotEmpty ? (obj[0].toUpperCase() + obj.substring(1)) : obj,
-                      price: 'Salient Target',
-                      icon: Icons.center_focus_strong_rounded,
-                      color: AppTheme.primary,
-                      delay: 100,
-                      imageUrl: '',
-                      onTap: () => _openEcommerceForObject(context, obj, suggestedProducts),
-                    );
-                  }),
-                  ...suggestedProducts.map((prod) {
-                    return _ProductCard(
-                      name: prod.name,
-                      price: '\$${prod.price.toStringAsFixed(2)}',
-                      icon: Icons.shopping_bag_rounded,
-                      color: AppTheme.primary,
-                      delay: 100,
-                      imageUrl: prod.imageUrl,
-                      onTap: () => _openEcommerceForProduct(context, prod),
-                    );
-                  }),
-                  if (salientObjects.isEmpty && suggestedProducts.isEmpty) ...const [
-                    _ProductCard(
-                      name: 'Smart Glasses Pro',
-                      price: '\$199.00',
-                      icon: Icons.visibility_rounded,
-                      color: Color(0xFF3B82F6),
-                      delay: 900,
-                    ),
-                    _ProductCard(
-                      name: 'Wireless Earbuds',
-                      price: '\$89.00',
-                      icon: Icons.headset_rounded,
-                      color: Color(0xFF8B5CF6),
-                      delay: 1000,
-                    ),
-                    _ProductCard(
-                      name: 'Fitness Band',
-                      price: '\$49.00',
-                      icon: Icons.watch_rounded,
-                      color: Color(0xFF10B981),
-                      delay: 1100,
-                    ),
-                    _ProductCard(
-                      name: 'AI Camera',
-                      price: '\$299.00',
-                      icon: Icons.camera_alt_rounded,
-                      color: Color(0xFFF59E0B),
-                      delay: 1200,
+            // HIGH SALIENCE PRICE COMPARISON BLOCK
+            if (session.state.lastBIEFrame != null &&
+                session.state.lastBIEFrame!.salienceScore >= 0.85 &&
+                suggestedProducts.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.amber.withValues(alpha: 0.5), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amber.withValues(alpha: 0.2),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
                     ),
                   ],
-                ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome_rounded, color: Colors.orange, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Highly Relevant: ${session.state.lastBIEFrame!.gazeTarget.toUpperCase()}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: Colors.orange,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Main image banner
+                    if (suggestedProducts.first.imageUrl.isNotEmpty)
+                      GestureDetector(
+                        onTap: () => _openEcommerceForProduct(context, suggestedProducts.first),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Stack(
+                            alignment: Alignment.bottomLeft,
+                            children: [
+                              Image.network(
+                                suggestedProducts.first.imageUrl,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
+                                    begin: Alignment.bottomCenter,
+                                    end: Alignment.topCenter,
+                                  ),
+                                ),
+                                padding: const EdgeInsets.all(12),
+                                width: double.infinity,
+                                child: Text(
+                                  'Tap to view on ${suggestedProducts.first.id.contains("amazon") ? "Amazon" : (suggestedProducts.first.id.contains("flipkart") ? "Flipkart" : "Store")}',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    const Text('Price Comparison:', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    const SizedBox(height: 8),
+                    ...suggestedProducts.map((prod) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: InkWell(
+                          onTap: () => _openEcommerceForProduct(context, prod),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    prod.name,
+                                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '₹${prod.price.toStringAsFixed(0)}',
+                                    style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w800, fontSize: 13),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+
+            if (session.state.lastBIEFrame == null || session.state.lastBIEFrame!.salienceScore < 0.85)
+              SizedBox(
+                height: 200,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    ...salientObjects.map((obj) {
+                      return _ProductCard(
+                        name: obj.isNotEmpty ? (obj[0].toUpperCase() + obj.substring(1)) : obj,
+                        price: 'Salient Target',
+                        icon: Icons.center_focus_strong_rounded,
+                        color: AppTheme.primary,
+                        delay: 100,
+                        imageUrl: '',
+                        onTap: () => _openEcommerceForObject(context, obj, suggestedProducts),
+                      );
+                    }),
+                    ...suggestedProducts.map((prod) {
+                      return _ProductCard(
+                        name: prod.name,
+                        price: '₹${prod.price.toStringAsFixed(0)}',
+                        icon: Icons.shopping_bag_rounded,
+                        color: AppTheme.primary,
+                        delay: 100,
+                        imageUrl: prod.imageUrl,
+                        onTap: () => _openEcommerceForProduct(context, prod),
+                      );
+                    }),
+                    if (salientObjects.isEmpty && suggestedProducts.isEmpty) ...const [
+                      _ProductCard(
+                        name: 'Smart Glasses Pro',
+                        price: '₹14999',
+                        icon: Icons.visibility_rounded,
+                        color: Color(0xFF3B82F6),
+                        delay: 900,
+                      ),
+                      _ProductCard(
+                        name: 'Wireless Earbuds',
+                        price: '₹8999',
+                        icon: Icons.headset_rounded,
+                        color: Color(0xFF8B5CF6),
+                        delay: 1000,
+                      ),
+                    ],
+                  ],
+                ),
               ),
-            ),
 
             const SizedBox(height: 24),
           ],

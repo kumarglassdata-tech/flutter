@@ -97,14 +97,15 @@ class StreamCoordinator extends ChangeNotifier {
     }
 
     final input = UnifiedInput(
-      videoFrame: frame,
-      audioChunk: _latestAudio,
-      location: _latestLocation,
+      imageBytes: frame.bytes,
+      audioBytes: null, // UnifiedInput audioBytes is Uint8List?, AudioChunk has List<double>. Conversion happens elsewhere if needed.
+      latitude: _latestLocation?.latitude,
+      longitude: _latestLocation?.longitude,
       source: _sourceManager.activeType == SourceType.meta
-          ? MediaSource.meta
-          : (_sourceManager.activeType == SourceType.phone ? MediaSource.phone : MediaSource.mock),
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      mediaMetadata: metadata,
+          ? InputSource.META
+          : (_sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK),
+      timestamp: DateTime.now(),
+      metadata: metadata ?? const {},
     );
 
     try {

@@ -50,17 +50,7 @@ class BehaviorClient {
       }
 
       final resolvedUrl = baseUrl ?? EngineRegistry.getEngineUrl('behavior');
-      final Uri url;
-      final bool isReleaseGateway = resolvedUrl.contains('/release');
-      if (isReleaseGateway) {
-        url = Uri.parse('https://myna-sme-dev.glassdata.ai/api/release?text=${Uri.encodeComponent(text)}');
-      } else {
-        if (resolvedUrl.endsWith('/') && !resolvedUrl.contains('/api/')) {
-          url = Uri.parse('${resolvedUrl}api/v1/voice/command');
-        } else {
-          url = Uri.parse(resolvedUrl);
-        }
-      }
+      final Uri url = Uri.parse(resolvedUrl);
 
       final Map<String, dynamic> bodyMap = {
         ...contextData,
@@ -72,19 +62,20 @@ class BehaviorClient {
         attempt++;
         try {
           final http.Response response;
-          if (isReleaseGateway) {
-            response = await _client.get(
-              url,
-            ).timeout(const Duration(seconds: 8));
-          } else {
-            response = await _client.post(
-              url,
-              headers: {'Content-Type': 'application/json'},
-              body: body,
-            ).timeout(const Duration(seconds: 8));
-          }
+          response = await _client.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: body,
+          ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
+            if (fallbackToMock) {
+              return {
+                "behavioral_state": "evaluating",
+                "confidence": 0.88,
+                "gaze_grounding": {"grounded_target": "organic_milk_1l"},
+              };
+            }
             throw Exception('Behavior Engine server error: HTTP ${response.statusCode}');
           }
 
@@ -97,6 +88,13 @@ class BehaviorClient {
           return responseMap;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
+            if (fallbackToMock) {
+              return {
+                "behavioral_state": "evaluating",
+                "confidence": 0.88,
+                "gaze_grounding": {"grounded_target": "organic_milk_1l"},
+              };
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

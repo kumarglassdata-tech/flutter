@@ -6,6 +6,8 @@ import 'package:smartglass_flutter/core/theme/app_theme.dart';
 import 'package:smartglass_flutter/core/engines/shared/circuit_breaker.dart';
 import 'package:smartglass_flutter/core/config/env_config.dart';
 import 'package:smartglass_flutter/core/sources/source_manager.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../dashboard/widgets/action_hub_tab.dart';
 
 class EngineInspectorScreen extends StatelessWidget {
   const EngineInspectorScreen({super.key});
@@ -51,7 +53,7 @@ class EngineInspectorScreen extends StatelessWidget {
     final behaviorReq = sharedState['context'] != null ? {'context_data': sharedState['context']} : null;
     final behaviorRes = sharedState['behavior'] as Map<String, dynamic>?;
 
-    final interactionReq = sharedState['behavior_output'] != null 
+    final interactionReq = sharedState['behavior'] != null 
         ? {
             'dialogue_mode': 'query',
             'utterance': 'User looking at ${session.state.lastBIEFrame?.gazeTarget}',
@@ -137,6 +139,16 @@ class EngineInspectorScreen extends StatelessWidget {
                     ],
                   ),
                 ],
+                const SizedBox(height: 16),
+                _InfoPanel(
+                  title: 'Location Context',
+                  children: [
+                    _InfoRow(
+                      label: 'Current Location',
+                      value: '${session.state.city ?? "Unknown"}, Lat: ${session.state.latitude?.toStringAsFixed(4) ?? '0.0'}, Lon: ${session.state.longitude?.toStringAsFixed(4) ?? '0.0'}',
+                    ),
+                  ],
+                ),
               ],
             ),
  
@@ -153,7 +165,7 @@ class EngineInspectorScreen extends StatelessWidget {
                 if (session.state.lastBIEFrame != null) ...[
                   const SizedBox(height: 16),
                   _InfoPanel(
-                    title: 'Intent & Gaze grounding',
+                    title: 'salience objects',
                     children: [
                       _InfoRow(label: 'Predicted intent', value: session.state.lastBIEFrame!.intent),
                       _InfoRow(label: 'Confidence level', value: '${(session.state.lastBIEFrame!.confidence * 100).toStringAsFixed(1)}%'),
@@ -190,13 +202,61 @@ class EngineInspectorScreen extends StatelessWidget {
                       _InfoRow(label: 'Gating reason', value: sharedState['gate_reason']?.toString() ?? 'N/A'),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.primary, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Live Generating Dialogues',
+                              style: TextStyle(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceVariant,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppTheme.outline.withValues(alpha: 0.2)),
+                          ),
+                          child: Text(
+                            session.state.lastInteractionResponse!.lastUtterance.isNotEmpty
+                                ? session.state.lastInteractionResponse!.lastUtterance
+                                : 'Awaiting input...',
+                            style: TextStyle(
+                              color: AppTheme.onSurface,
+                              fontSize: 14,
+                              fontStyle: session.state.lastInteractionResponse!.lastUtterance.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ],
             ),
  
             // Ecom Tab
             _InspectorTab(
-              name: 'E-Commerce Handler',
+              name: 'Action Hub Subsystem',
               state: ecomState,
               latencyMs: ecomLatency,
               isMock: ecomIsMock,
@@ -204,15 +264,8 @@ class EngineInspectorScreen extends StatelessWidget {
               requestJson: ecomReq,
               responseJson: ecomRes,
               extraWidgets: [
-                if (session.state.suggestedProducts.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _InfoPanel(
-                    title: 'Suggested Ecom Products',
-                    children: session.state.suggestedProducts.map((prod) {
-                      return _InfoRow(label: prod.name, value: '\$${prod.price.toStringAsFixed(2)}');
-                    }).toList(),
-                  ),
-                ],
+                const SizedBox(height: 16),
+                ActionHubTab(actionHubResult: session.state.actionHubResult),
               ],
             ),
  
@@ -549,6 +602,52 @@ class _InfoRow extends StatelessWidget {
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GridCard extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+
+  const _GridCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.outline.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppTheme.primary, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Expanded(
+            child: Text(
+              subtitle,
+              style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 10),
+              maxLines: 15,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

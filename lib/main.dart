@@ -58,6 +58,9 @@ class SmartGlassApp extends StatelessWidget {
             themeMode: settingsProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             routerConfig: router,
             debugShowCheckedModeBanner: false,
+            builder: (context, child) {
+              return child ?? const SizedBox();
+            },
           );
         },
       ),

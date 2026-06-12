@@ -1,43 +1,56 @@
-import 'dart:async';
-import 'package:smartglass_flutter/core/orchestrator/pipeline_step.dart';
-import 'package:smartglass_flutter/core/models/engine_models.dart';
+import '../../models/domain/gate_decision.dart';
+import '../../models/engine_models.dart';
+import '../pipeline_step.dart';
 
 class GateCheckStep extends PipelineStep<BIEFrame, bool> {
-  final double relevanceThreshold;
-  final Map<String, int> _gazeFrequency = {};
-
-  GateCheckStep({this.relevanceThreshold = 0.5}) : super('GateCheckStep');
+  GateCheckStep() : super('GateCheckStep');
 
   @override
   Future<PipelineResult<bool>> execute(
     BIEFrame input,
     Map<String, dynamic> sharedState,
   ) async {
-    var salience = input.salienceScore;
-    
-    // Temporal salience boosting: If we see the same target multiple times, user is interested
-    if (input.gazeTarget != 'unknown' && input.gazeTarget.isNotEmpty) {
-      _gazeFrequency[input.gazeTarget] = (_gazeFrequency[input.gazeTarget] ?? 0) + 1;
-      
-      if ((_gazeFrequency[input.gazeTarget] ?? 0) >= 3 && salience < 0.86) {
-        salience = 0.86;
-        
-        // Update shared state so downstream steps see the boosted salience
-        sharedState['behavior_output'] = BIEFrame(
-          intent: input.intent,
-          confidence: input.confidence,
-          gazeTarget: input.gazeTarget,
-          salienceScore: salience,
-          raw: input.raw,
+    try {
+      final score = input.salienceScore;
+      GateDecision decision;
+
+      if (score < 0.5) {
+        decision = GateDecision(
+          shouldInteract: false,
+          shouldRunEcom: false,
+          shouldPersistMemory: false,
+          relevanceScore: score,
+          reason: 'Low relevance ($score). Halting pipeline interactions.',
+        );
+      } else if (score < 0.85) {
+        decision = GateDecision(
+          shouldInteract: true,
+          shouldRunEcom: false,
+          shouldPersistMemory: true,
+          relevanceScore: score,
+          reason: 'Moderate relevance ($score). Triggering interaction only.',
+        );
+      } else {
+        decision = GateDecision(
+          shouldInteract: true,
+          shouldRunEcom: true,
+          shouldPersistMemory: true,
+          relevanceScore: score,
+          reason: 'High relevance ($score). Triggering interaction and Action Hub lookup.',
         );
       }
-    }
 
-    final bool isRelevant = salience >= relevanceThreshold && input.gazeTarget != 'unknown';
-    sharedState['gate_open'] = isRelevant;
-    sharedState['gate_reason'] = isRelevant
-        ? 'Salience score $salience satisfies threshold $relevanceThreshold'
-        : 'Salience score $salience is below threshold $relevanceThreshold or gaze target is unknown';
-    return PipelineResult.success(isRelevant);
+      sharedState['gate_decision'] = decision;
+      sharedState['gate_reason'] = decision.reason;
+      sharedState['gate_open'] = decision.shouldInteract;
+
+      if (!decision.shouldInteract) {
+        return PipelineResult.success(false); // Valid completion, just returned false
+      }
+
+      return PipelineResult.success(true);
+    } catch (e) {
+      return PipelineResult.failure('Gate check exception: $e');
+    }
   }
 }
