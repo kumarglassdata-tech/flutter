@@ -60,7 +60,6 @@ dependencies:
   audio_session: ^0.2.3
   flutter_pcm_sound: ^3.3.3
   flutter_dotenv: ^6.0.1
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

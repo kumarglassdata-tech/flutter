@@ -726,9 +726,10 @@ class _EngineMetricsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final gaze = lastBIEFrame?.gazeTarget ?? 'None';
-    final salience = lastBIEFrame?.salienceScore ?? 0.0;
-    final intent = lastBIEFrame?.intent ?? 'None';
-    final confidence = lastBIEFrame?.confidence ?? 0.0;
+    final commerceRelevance = lastBIEFrame?.salienceScore ?? 0.0;
+    final intentScore = lastBIEFrame?.intentScore ?? 0.0;
+    final behavioralState = lastBIEFrame?.behavioralState ?? 'None';
+    final stateConfidence = lastBIEFrame?.stateConfidence ?? 0.0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -763,7 +764,7 @@ class _EngineMetricsPanel extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Text(
-                'Focus & Behavioral Intent',
+                'Focus & Behavioral State',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                       color: AppTheme.onSurface,
@@ -819,17 +820,24 @@ class _EngineMetricsPanel extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _MetricProgressRow(
-            label: 'Salience Score',
-            value: salience,
+            label: 'Commerce Relevance Score',
+            value: commerceRelevance,
             icon: Icons.track_changes_rounded,
             color: Colors.amber[700]!,
           ),
           const SizedBox(height: 12),
           _MetricProgressRow(
-            label: 'Intent Confidence ($intent)',
-            value: confidence,
+            label: 'Intent Score',
+            value: intentScore,
             icon: Icons.insights_rounded,
-            color: Colors.teal[600]!,
+            color: Colors.deepPurple[600]!,
+          ),
+          const SizedBox(height: 12),
+          _MetricRow(
+            label: 'Behavioral State',
+            value: '$behavioralState (${(stateConfidence * 100).toStringAsFixed(0)}%)',
+            icon: Icons.psychology_rounded,
+            iconColor: Colors.teal[600]!,
           ),
         ],
       ),

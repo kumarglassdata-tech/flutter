@@ -99,7 +99,7 @@ class ConsumerAnalyticsTab extends StatelessWidget {
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         Text(
-                          interestScore >= thresholdInt ? 'High Intent Detected' : 'Passive Observation',
+                          interestScore >= thresholdInt ? 'High Interest Detected' : 'Passive Observation',
                           style: TextStyle(
                             color: AppTheme.onSurfaceVariant,
                             fontSize: 13,
