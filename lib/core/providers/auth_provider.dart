@@ -31,7 +31,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String get username => _username;
   String get email => _email;
-  bool get isAdmin => _isLoggedIn && (_email.toLowerCase() == 'kumargandhudi@glassdata.ai' || _username.toLowerCase() == 'hackerr03' || _email.toLowerCase() == 'demo@glassdata.ai');
+  bool get isAdmin => _isLoggedIn && (_email.toLowerCase() == 'kumargandhudi@glassdata.ai' || _username.toLowerCase() == 'hackerr03' );
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -94,11 +94,13 @@ class SettingsProvider extends ChangeNotifier {
   bool _autoLoginDemoMode = false;
   String _preferredCamera = 'PHONE';
   bool _isDarkMode = false;
+  double _salienceThreshold = 0.75;
 
   bool get useMockMeta => _useMockMeta;
   bool get autoLoginDemoMode => _autoLoginDemoMode;
   String get preferredCamera => _preferredCamera;
   bool get isDarkMode => _isDarkMode;
+  double get salienceThreshold => _salienceThreshold;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -106,6 +108,7 @@ class SettingsProvider extends ChangeNotifier {
     _autoLoginDemoMode = prefs.getBool('autoLoginDemoMode') ?? false;
     _preferredCamera = prefs.getString('preferredCamera') ?? 'PHONE';
     _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+    _salienceThreshold = prefs.getDouble('salienceThreshold') ?? 0.75;
     notifyListeners();
   }
 
@@ -130,6 +133,12 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setPreferredCamera(String value) async {
     _preferredCamera = value;
     (await SharedPreferences.getInstance()).setString('preferredCamera', value);
+    notifyListeners();
+  }
+
+  Future<void> setSalienceThreshold(double value) async {
+    _salienceThreshold = value;
+    (await SharedPreferences.getInstance()).setDouble('salienceThreshold', value);
     notifyListeners();
   }
 }

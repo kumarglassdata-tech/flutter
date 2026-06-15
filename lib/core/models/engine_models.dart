@@ -169,10 +169,7 @@ class BIEFrame {
         salience = (salient.first['salience_score'] ?? 0.0).toDouble();
       }
     }
-
-    if (salience == 0.0 && gazeTarget != 'unknown') {
-      salience = 0.8;
-    }
+    // Do NOT apply a hardcoded fallback — let the real BE relevance_score drive the gate
 
     return BIEFrame(
       intent: intent,
@@ -305,6 +302,7 @@ class InteractionResponse {
   final String llmGateStatus;
   final BCPPayload bcp;
   final Map<String, dynamic> raw;
+  final bool isAssistantGenerating;
 
   InteractionResponse({
     required this.dialogueMode,
@@ -312,6 +310,7 @@ class InteractionResponse {
     required this.llmGateStatus,
     required this.bcp,
     required this.raw,
+    this.isAssistantGenerating = false,
   });
 
   factory InteractionResponse.fromJson(Map<String, dynamic> json) {
@@ -335,6 +334,7 @@ class InteractionResponse {
       llmGateStatus: llmGateStatus,
       bcp: BCPPayload.fromJson(json['bcp'] ?? {}),
       raw: json,
+      isAssistantGenerating: json['is_assistant_generating'] ?? false,
     );
   }
 
@@ -533,7 +533,7 @@ class MemoryResponse {
 
   factory MemoryResponse.fromJson(Map<String, dynamic> json) {
     var recallText = '';
-    final memories = json['semantic_memories'] ?? json['memories'];
+    final memories = json['semantic_memories'] ?? json['memories'] ?? (json['memory_response'] as Map?)?['semantic_memories'];
     if (memories is List) {
       recallText = memories.map((m) {
         if (m is Map) {

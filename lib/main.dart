@@ -7,8 +7,11 @@ import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
 
   // Load persisted state before app starts
   final auth = AuthProvider();

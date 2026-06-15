@@ -22,19 +22,11 @@ class EcomClient {
 
   Future<Map<String, dynamic>> queryEcom(Map<String, dynamic> requestPayload) async {
     return circuitBreaker.execute(() async {
-      final body = jsonEncode(requestPayload);
-      
-      // Look up action type from payload if passed, default to buy
+      // action_type drives which endpoint: buy | recommend | lifebalance | analyze
       final actionType = requestPayload['action_type'] as String? ?? 'buy';
       final resolvedUrl = EngineRegistry.getEngineUrl(actionType);
-      
-      final Uri url;
-      if (resolvedUrl.endsWith('/$actionType')) {
-        url = Uri.parse(resolvedUrl);
-      } else {
-        final base = resolvedUrl.endsWith('/') ? resolvedUrl.substring(0, resolvedUrl.length - 1) : resolvedUrl;
-        url = Uri.parse('$base/$actionType');
-      }
+      final url = Uri.parse(resolvedUrl);
+      final body = jsonEncode(requestPayload..remove('action_type'));
 
       var attempt = 0;
       while (true) {

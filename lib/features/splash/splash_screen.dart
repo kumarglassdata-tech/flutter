@@ -15,10 +15,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 1800), () {
+    Future.delayed(const Duration(milliseconds: 2500), () {
       if (mounted) {
-        final auth = context.read<AuthProvider>();
-        context.go(auth.isLoggedIn ? '/home' : '/home');
+        context.go('/home');
       }
     });
   }
@@ -27,87 +26,145 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
+        width: double.infinity,
         decoration: const BoxDecoration(
+          // Warm, earthy blurred gradient background
           gradient: LinearGradient(
-            colors: [Color(0xFF0F172A), Color(0xFF1E3A5F), Color(0xFF3B82F6)],
+            colors: [
+              Color(0xFF38402D), // Deep moss green
+              Color(0xFF4C3E27), // Warm earthy brown
+              Color(0xFF282D20), // Darker green/black
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
+            stops: [0.1, 0.5, 0.9],
           ),
         ),
-        child: Center(
+        child: SafeArea(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Animated logo
+              const Spacer(flex: 3),
+              
+              // Animated Circular Logo with Gold Halo
               Container(
-                width: 100,
-                height: 100,
+                width: 180,
+                height: 180,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(28),
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.2),
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                    color: const Color(0xFFE5C885), // Soft gold
+                    width: 4.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFE5C885).withValues(alpha: 0.25),
+                      blurRadius: 30,
+                      spreadRadius: 5,
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  'assets/images/smart_myna_logo.jpg',
-                  fit: BoxFit.cover,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/smart_myna_logo.jpg',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               )
                   .animate()
-                  .fadeIn(duration: 600.ms)
-                  .scale(begin: const Offset(0.6, 0.6), duration: 700.ms,
-                      curve: Curves.easeOutBack),
+                  .fadeIn(duration: 800.ms)
+                  .scale(
+                      begin: const Offset(0.8, 0.8),
+                      duration: 1000.ms,
+                      curve: Curves.easeOutCubic),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 40),
 
-              Text(
-                'Smart Myna',
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -1,
-                    ),
+              // "MYNA" Elegant Typography
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFFF7E6B4), Color(0xFFD4AF37), Color(0xFFB48C2B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ).createShader(bounds),
+                child: const Text(
+                  'MYNA',
+                  style: TextStyle(
+                    fontFamily: 'serif',
+                    color: Colors.white, // Masked by shader
+                    fontSize: 54,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 6.0,
+                  ),
+                ),
               )
                   .animate()
-                  .fadeIn(delay: 400.ms, duration: 600.ms)
-                  .slideY(begin: 0.3, duration: 500.ms),
+                  .fadeIn(delay: 500.ms, duration: 800.ms)
+                  .slideY(begin: 0.2, duration: 800.ms, curve: Curves.easeOut),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
 
-              Text(
-                'AI-Powered Ecommerce Platform',
+              // Subtitle 1
+              const Text(
+                'Connect. See. Interact. Discover. Buy.',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.5,
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 800.ms, duration: 600.ms),
+
+              const SizedBox(height: 6),
+
+              // Subtitle 2
+              Text(
+                'AI-Powered Smart Glasses',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.6),
                   fontSize: 14,
+                  fontWeight: FontWeight.w300,
+                  letterSpacing: 0.3,
+                ),
+              )
+                  .animate()
+                  .fadeIn(delay: 1000.ms, duration: 600.ms),
+
+              const Spacer(flex: 4),
+
+              // Loading Text
+              Text(
+                'App Loading...',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontSize: 13,
                   fontWeight: FontWeight.w400,
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 600.ms, duration: 600.ms),
+                  .fadeIn(delay: 1200.ms, duration: 600.ms),
 
-              const SizedBox(height: 80),
+              const SizedBox(height: 12),
 
+              // Sleek Linear Progress Bar
               SizedBox(
-                width: 32,
-                height: 32,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: Colors.white.withValues(alpha: 0.6),
+                width: 180,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: const LinearProgressIndicator(
+                    minHeight: 3,
+                    backgroundColor: Colors.white24,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFD4AF37)),
+                  ),
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 900.ms, duration: 500.ms),
+                  .fadeIn(delay: 1300.ms, duration: 600.ms),
 
-              const SizedBox(height: 16),
-
-              Text(
-                'Loading…',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-              )
-                  .animate()
-                  .fadeIn(delay: 900.ms),
+              const SizedBox(height: 48), // Bottom padding
             ],
           ),
         ),
@@ -115,3 +172,4 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
+

@@ -1,19 +1,17 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'package:flutter_sound/flutter_sound.dart';
-
+import 'package:flutter_pcm_sound/flutter_pcm_sound.dart';
 class AudioPlaybackService {
-  FlutterSoundPlayer? _player;
+  // FlutterPcmSound has no player instance needed
   bool _isPlaying = false;
   Completer<void>? _startCompleter;
 
   Future<void> init() async {
-    _player = FlutterSoundPlayer();
-    await _player!.openPlayer();
+    // Initialization happens in startStream
   }
 
   Future<void> startStream() async {
-    if (_isPlaying || _player == null) return;
+    if (_isPlaying) return;
     
     if (_startCompleter != null) {
       await _startCompleter!.future;
@@ -22,14 +20,8 @@ class AudioPlaybackService {
     
     _startCompleter = Completer<void>();
     try {
-      await _player!.startPlayerFromStream(
-        codec: Codec.pcm16,
-        numChannels: 1,
-        sampleRate: 16000,
-        bufferSize: 8192,
-        interleaved: false,
-      );
       _isPlaying = true;
+      FlutterPcmSound.start();
     } catch (e) {
       print("[AudioPlaybackService] Failed to start stream: $e");
     } finally {
@@ -47,16 +39,15 @@ class AudioPlaybackService {
     if (!_isPlaying) return; // Prevent NullPointerException
     
     try {
-      await _player!.feedFromStream(pcmChunk);
+      await FlutterPcmSound.feed(PcmArrayInt16.fromList(pcmChunk.buffer.asInt16List()));
     } catch (e) {
       print("[AudioPlaybackService] Failed to feed audio chunk: $e");
     }
   }
 
   Future<void> stopStream() async {
-    if (!_isPlaying || _player == null) return;
+    if (!_isPlaying) return;
     try {
-      await _player!.stopPlayer();
       _isPlaying = false;
     } catch (e) {
       print("[AudioPlaybackService] Failed to stop stream: $e");
@@ -65,7 +56,5 @@ class AudioPlaybackService {
 
   Future<void> dispose() async {
     await stopStream();
-    await _player?.closePlayer();
-    _player = null;
   }
 }

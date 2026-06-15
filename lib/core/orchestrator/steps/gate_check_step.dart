@@ -12,9 +12,23 @@ class GateCheckStep extends PipelineStep<BIEFrame, bool> {
   ) async {
     try {
       final score = input.salienceScore;
+
+      // Respect the BE's own gate_open signal if present — it has more context
+      final beGateOpen = input.raw['gate_open'] as bool?;
+      final suppressReason = input.raw['suppress_reason']?.toString();
+
       GateDecision decision;
 
-      if (score < 0.5) {
+      if (beGateOpen == false) {
+        // BE explicitly says do not interact
+        decision = GateDecision(
+          shouldInteract: false,
+          shouldRunEcom: false,
+          shouldPersistMemory: true,
+          relevanceScore: score,
+          reason: 'BE suppressed: ${suppressReason ?? "gate_open=false"}',
+        );
+      } else if (score < 0.5) {
         decision = GateDecision(
           shouldInteract: false,
           shouldRunEcom: false,

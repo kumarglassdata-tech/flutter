@@ -55,9 +55,11 @@ dependencies:
   video_thumbnail: ^0.5.6
   record: ^7.0.0
   flutter_tts: ^3.8.3
-  flutter_sound: ^9.2.13
   web_socket_channel: ^3.0.0
   geocoding: ^4.0.0
+  audio_session: ^0.2.3
+  flutter_pcm_sound: ^3.3.3
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -75,21 +77,21 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: assets/images/smart_myna_logo.jpg
-    background_color: "#109E95"
-    theme_color: "#109E95"
+    background_color: "#282D20"
+    theme_color: "#282D20"
   windows:
     generate: false
   macos:
     generate: false
 
 flutter_native_splash:
-  color: "#109E95"
+  color: "#282D20"
   image: assets/images/smart_myna_logo.jpg
   android: true
   ios: true
   web: true
   android_12:
-    color: "#109E95"
+    color: "#282D20"
     image: assets/images/smart_myna_logo.jpg
 
 flutter:
@@ -97,3 +99,4 @@ flutter:
   assets:
     - assets/images/
     - assets/models/
+    - .env

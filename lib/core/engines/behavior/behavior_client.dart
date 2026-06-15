@@ -22,79 +22,31 @@ class BehaviorClient {
         _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
         circuitBreaker = CircuitBreaker(name: 'BehaviorEngine');
 
-  Future<Map<String, dynamic>> sendBehavior(Map<String, dynamic> contextData) async {
+  Future<Map<String, dynamic>> sendBehavior(Map<String, dynamic> requestPayload) async {
     return circuitBreaker.execute(() async {
-      String text = 'Voice intent processing';
-      final ctxData = contextData['context_data'];
-      if (ctxData is Map) {
-        final results = ctxData['results'];
-        if (results is Map && results['vision'] is Map && results['vision']['objects'] is List) {
-          final list = results['vision']['objects'] as List;
-          if (list.isNotEmpty) {
-            final firstObj = list.first;
-            if (firstObj is Map && firstObj['class'] != null) {
-              text = "User looking at ${firstObj['class']}";
-            }
-          }
-        } else {
-          final rawObjects = ctxData['detected_objects'] ?? ctxData['tracked_objects'];
-          if (rawObjects is List && rawObjects.isNotEmpty) {
-            final first = rawObjects.first;
-            if (first is Map) {
-              text = "User looking at ${first['label'] ?? first['name'] ?? 'object'}";
-            } else {
-              text = "User looking at $first";
-            }
-          }
-        }
-      }
-
       final resolvedUrl = baseUrl ?? EngineRegistry.getEngineUrl('behavior');
-      final Uri url = Uri.parse(resolvedUrl);
-
-      final Map<String, dynamic> bodyMap = {
-        ...contextData,
-      };
-      final body = jsonEncode(bodyMap);
+      final url = Uri.parse(resolvedUrl);
+      final body = jsonEncode(requestPayload);
 
       var attempt = 0;
       while (true) {
         attempt++;
         try {
-          final http.Response response;
-          response = await _client.post(
+          final response = await _client.post(
             url,
             headers: {'Content-Type': 'application/json'},
             body: body,
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            if (fallbackToMock) {
-              return {
-                "behavioral_state": "evaluating",
-                "confidence": 0.88,
-                "gaze_grounding": {"grounded_target": "organic_milk_1l"},
-              };
-            }
-            throw Exception('Behavior Engine server error: HTTP ${response.statusCode}');
+            if (fallbackToMock) return _behaviorMock();
+            throw Exception('Behavior Engine HTTP ${response.statusCode}');
           }
 
-          final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
-          if (responseMap.containsKey('voice_assistant_response')) {
-            final Map<String, dynamic> mapped = Map<String, dynamic>.from(responseMap);
-            mapped['intent'] = responseMap['voice_assistant_response']?['intent'];
-            return mapped;
-          }
-          return responseMap;
+          return jsonDecode(response.body) as Map<String, dynamic>;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
-            if (fallbackToMock) {
-              return {
-                "behavioral_state": "evaluating",
-                "confidence": 0.88,
-                "gaze_grounding": {"grounded_target": "organic_milk_1l"},
-              };
-            }
+            if (fallbackToMock) return _behaviorMock();
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));
@@ -102,4 +54,14 @@ class BehaviorClient {
       }
     });
   }
+
+  Map<String, dynamic> _behaviorMock() => {
+    'behavioral_state': 'product_interest',
+    'state_confidence': 0.88,
+    'gaze_grounding': {'grounded_target': 'organic_milk_1l'},
+    'relevance_score': 0.85,
+    'top_salient_objects': [
+      {'object_id': 102, 'class_name': 'organic_milk_1l', 'salience_score': 0.88}
+    ],
+  };
 }

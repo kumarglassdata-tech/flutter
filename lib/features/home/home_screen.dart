@@ -8,6 +8,7 @@ import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/features/shell/app_shell.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
 import 'package:smartglass_flutter/core/models/engine_models.dart';
+import 'package:smartglass_flutter/features/dashboard/widgets/file_upload_widget.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -124,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final session = context.watch<SessionProvider>();
+    final settings = context.watch<SettingsProvider>();
     final salientObjects = session.state.topSalientObjects;
     final suggestedProducts = session.state.suggestedProducts;
     final hour = DateTime.now().hour;
@@ -209,6 +211,14 @@ class _HomeScreenState extends State<HomeScreen> {
             _StatusBanner(isLoggedIn: auth.isLoggedIn)
                 .animate()
                 .fadeIn(delay: 200.ms, duration: 400.ms)
+                .slideY(begin: 0.1),
+
+            const SizedBox(height: 20),
+
+            // Video Upload Widget
+            const FileUploadWidget()
+                .animate()
+                .fadeIn(delay: 220.ms, duration: 400.ms)
                 .slideY(begin: 0.1),
 
             const SizedBox(height: 20),
@@ -307,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // HIGH SALIENCE PRICE COMPARISON BLOCK
             if (session.state.lastBIEFrame != null &&
-                session.state.lastBIEFrame!.salienceScore >= 0.85 &&
+                session.state.lastBIEFrame!.salienceScore >= settings.salienceThreshold &&
                 suggestedProducts.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(bottom: 24),

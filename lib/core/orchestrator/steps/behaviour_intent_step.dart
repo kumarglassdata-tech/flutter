@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:smartglass_flutter/core/config/env_config.dart';
 import 'package:smartglass_flutter/core/orchestrator/pipeline_step.dart';
 import 'package:smartglass_flutter/core/engines/behavior/behavior_client.dart';
@@ -12,7 +13,11 @@ class BehaviourIntentStep extends PipelineStep<ContextEngineOutput, BIEFrame> {
 
   BehaviourIntentStep(this._client, {bool? forceMock})
       : _forceMock = forceMock ?? EnvConfig.behaviourIntentUrl.isEmpty,
-        super('BehaviourIntentStep');
+        super('BehaviourIntentStep') {
+    if (EnvConfig.behaviourIntentUrl.isEmpty) {
+      debugPrint('[BehaviourIntentStep] WARNING: BEHAVIOR_ENGINE_URL is empty — running in mock mode. Check .env file.');
+    }
+  }
 
   @override
   Future<PipelineResult<BIEFrame>> execute(
@@ -31,7 +36,8 @@ class BehaviourIntentStep extends PipelineStep<ContextEngineOutput, BIEFrame> {
     try {
       final lat = sharedState['input_lat'] as double? ?? 0.0;
       final lon = sharedState['input_lon'] as double? ?? 0.0;
-      final requestPayload = RequestMappers.toBehaviorRequest(input, lat: lat, lon: lon);
+      final sessionId = sharedState['session_id'] as String? ?? 'wearer_001';
+      final requestPayload = RequestMappers.toBehaviorRequest(input, lat: lat, lon: lon, sessionId: sessionId);
       final response = await _client.sendBehavior(requestPayload);
       final defaultGaze = input.topSalientObjects.firstOrNull;
       final output = BIEFrame.fromJson(response, defaultGazeTarget: defaultGaze);

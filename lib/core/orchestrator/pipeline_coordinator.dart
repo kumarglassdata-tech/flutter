@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:smartglass_flutter/core/orchestrator/steps/context_engine_step.dart';
 import 'package:smartglass_flutter/core/orchestrator/steps/behaviour_intent_step.dart';
@@ -57,6 +58,8 @@ class PipelineCoordinator {
     sharedState['engine_status'] = statuses;
     sharedState['input_lat'] = input.latitude ?? 0.0;
     sharedState['input_lon'] = input.longitude ?? 0.0;
+    final prefs = await SharedPreferences.getInstance();
+    sharedState['session_id'] = prefs.getString('email') ?? 'wearer_001';
     final stopwatch = Stopwatch()..start();
 
     final timestamp = input.timestamp;
@@ -132,7 +135,7 @@ class PipelineCoordinator {
     print('[STEP 2] BehaviorEngine (Latency: ${behaviorLatency}ms, Mock: $behaviorIsMock)');
     print('  - Request:');
     try {
-      final reqPayload = RequestMappers.toBehaviorRequest(contextRes.output!, lat: lat, lon: lon);
+      final reqPayload = RequestMappers.toBehaviorRequest(contextRes.output!, lat: lat, lon: lon, sessionId: sharedState['session_id'] as String? ?? 'wearer_001');
       print('    ${jsonEncode(reqPayload)}');
     } catch (_) {
       print('    <Failed to map request payload>');

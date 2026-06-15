@@ -1,6 +1,6 @@
 # Deploy APK to Firebase Hosting
 Write-Host "1. Building Release APK..." -ForegroundColor Green
-flutter build apk --release
+flutter build apk --release --dart-define-from-file=.env.json
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Flutter APK build failed!"

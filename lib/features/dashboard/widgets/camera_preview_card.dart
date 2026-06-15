@@ -70,7 +70,7 @@ class CameraPreviewCard extends StatelessWidget {
                         child: Stack(
                           children: [
                             Positioned.fill(child: CameraPreview(controller)),
-                            if (lastContextOutput != null)
+                            if (isAdmin && lastContextOutput != null)
                               Positioned.fill(
                                 child: RepaintBoundary(
                                   child: BoundingBoxOverlay(
@@ -91,7 +91,7 @@ class CameraPreviewCard extends StatelessWidget {
                 )
               : SizedBox(
                   width: double.infinity,
-                  height: MediaQuery.of(context).size.height * 0.5,
+                  height: MediaQuery.of(context).size.height * 0.45,
                   child: Container(
                     color: const Color(0xFFF8FAFC),
                     alignment: Alignment.center,

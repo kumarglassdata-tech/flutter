@@ -22,10 +22,49 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  late SessionProvider _sessionProvider;
+  String _lastCheckedUtterance = '';
+  bool _isBottomSheetOpen = false;
+
   @override
   void initState() {
     super.initState();
     _requestPermissions();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sessionProvider = context.read<SessionProvider>();
+    _sessionProvider.addListener(_onSessionUpdate);
+  }
+
+  @override
+  void dispose() {
+    _sessionProvider.removeListener(_onSessionUpdate);
+    super.dispose();
+  }
+
+  void _onSessionUpdate() {
+    if (!mounted) return;
+    final utterance = _sessionProvider.state.lastInteractionResponse?.lastUtterance ?? '';
+    if (utterance != _lastCheckedUtterance && utterance.isNotEmpty) {
+      _lastCheckedUtterance = utterance;
+      final text = utterance.toLowerCase();
+      if (text.contains('hey myna') || text.contains('hello myna') || text.contains('myna')) {
+        if (!_isBottomSheetOpen) {
+          _isBottomSheetOpen = true;
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (ctx) => const MynaAssistantBottomSheet(),
+          ).whenComplete(() {
+            _isBottomSheetOpen = false;
+          });
+        }
+      }
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -60,9 +99,6 @@ class _AppShellState extends State<AppShell> {
             builder: (ctx) => const MynaAssistantBottomSheet(),
           );
         },
-        onLongPressStart: (_) => context.read<SessionProvider>().audioStreamManager.startRecording(),
-        onLongPressEnd: (_) => context.read<SessionProvider>().audioStreamManager.stopRecording(),
-        onLongPressCancel: () => context.read<SessionProvider>().audioStreamManager.stopRecording(),
         child: Container(
           width: 64,
           height: 64,
@@ -265,16 +301,27 @@ class _AppDrawer extends StatelessWidget {
           _drawerItem(context, Icons.info_rounded, 'About', '/about'),
           const Spacer(),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
-            title: const Text('Logout',
-                style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
-            onTap: () async {
-              Navigator.pop(context);
-              await auth.logout();
-              if (context.mounted) context.go('/home');
-            },
-          ),
+          if (auth.isLoggedIn)
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
+              title: const Text('Logout',
+                  style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
+              onTap: () async {
+                Navigator.pop(context);
+                await auth.logout();
+                if (context.mounted) context.go('/home');
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.login_rounded, color: AppTheme.primary),
+              title: const Text('Login',
+                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/login?target=/home');
+              },
+            ),
           const SizedBox(height: 8),
         ],
       ),

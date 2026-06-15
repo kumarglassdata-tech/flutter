@@ -23,6 +23,7 @@ import 'widgets/control_panel.dart';
 import 'widgets/meta_stream_tab.dart';
 import 'widgets/placeholder_tab.dart';
 import 'widgets/normal_user_cards.dart';
+import 'widgets/consumer_analytics_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         final auth = context.read<AuthProvider>();
         setState(() {
-          _tabCount = auth.isAdmin ? 5 : 1;
+          _tabCount = auth.isAdmin ? 5 : 2;
           _tabController = TabController(length: _tabCount, vsync: this);
         });
 
@@ -81,6 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       'Reports',
     ] : [
       'Dashboard',
+      'Analytics',
     ];
 
     return Scaffold(
@@ -117,6 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           const PlaceholderTab(title: 'Reports'),
         ] : [
           _MainDashboardContent(settings: settings),
+          const ConsumerAnalyticsTab(),
         ],
       ),
     );
@@ -216,12 +219,13 @@ class _MainDashboardContent extends StatelessWidget {
               ),
             ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.08),
 
-          const SizedBox(height: 16),
-
-          const SourceInputSelector()
-              .animate()
-              .fadeIn(duration: 400.ms)
-              .slideY(begin: 0.08),
+          if (isAdmin) ...[
+            const SizedBox(height: 16),
+            const SourceInputSelector()
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.08),
+          ],
 
           const SizedBox(height: 16),
           // Normal User + Admin Cards

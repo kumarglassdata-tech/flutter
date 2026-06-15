@@ -84,6 +84,8 @@ class BoundingBoxOverlay extends StatelessWidget {
     if (refWidth <= 0.0) refWidth = 1.0;
     if (refHeight <= 0.0) refHeight = 1.0;
 
+    final attentionTarget = raw['attention_grounding']?['attention_target']?.toString().toLowerCase();
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final scaleX = constraints.maxWidth / refWidth;
@@ -93,6 +95,9 @@ class BoundingBoxOverlay extends StatelessWidget {
           children: boxes.asMap().entries.map((entry) {
             final int index = entry.key;
             final BoundingBox box = entry.value;
+            
+            final isGazeTarget = attentionTarget != null && box.label.toLowerCase().contains(attentionTarget);
+            final color = isGazeTarget ? const Color(0xFFFF2A6D) : const Color(0xFF00E5FF);
 
             double left = box.left * scaleX;
             final double top = box.top * scaleY;
@@ -116,13 +121,13 @@ class BoundingBoxOverlay extends StatelessWidget {
               height: height > 0 ? height : 1.0,
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFF00E5FF), width: 2.5),
+                  border: Border.all(color: color, width: isGazeTarget ? 3.5 : 2.5),
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E5FF).withValues(alpha: 0.4),
-                      blurRadius: 10,
-                      spreadRadius: 1,
+                      color: color.withValues(alpha: isGazeTarget ? 0.6 : 0.4),
+                      blurRadius: isGazeTarget ? 15 : 10,
+                      spreadRadius: isGazeTarget ? 2 : 1,
                     ),
                   ],
                 ),
@@ -130,15 +135,15 @@ class BoundingBoxOverlay extends StatelessWidget {
                   alignment: Alignment.topLeft,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF00E5FF),
-                      borderRadius: BorderRadius.only(
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(5),
                         bottomRight: Radius.circular(8),
                       ),
                     ),
                     child: Text(
-                      '${box.label.replaceAll(RegExp(r'\[.*?\]\s*'), '')} ${(box.confidence * 100).toStringAsFixed(0)}%',
+                      '${isGazeTarget ? '[GAZE] ' : ''}${box.label.replaceAll(RegExp(r'\[.*?\]\s*'), '')} ${(box.confidence * 100).toStringAsFixed(0)}%',
                       style: const TextStyle(
                         color: Colors.black,
                         fontSize: 10,

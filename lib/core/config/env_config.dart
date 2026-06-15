@@ -1,51 +1,27 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class EnvConfig {
   EnvConfig._();
 
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'https://myna-prototype-api.glassdata.ai',
-  );
+  static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? const String.fromEnvironment('API_BASE_URL');
+  static String get apiPrefix => dotenv.env['API_PREFIX'] ?? const String.fromEnvironment('API_PREFIX');
 
-  static const String apiPrefix = String.fromEnvironment(
-    'API_PREFIX',
-    defaultValue: '/api',
-  );
+  // Context Engine — POST /inp  |  GET /predict
+  static String get contextEngineUrl => dotenv.env['CONTEXT_ENGINE_URL'] ?? const String.fromEnvironment('CONTEXT_ENGINE_URL');
 
-  static const String contextEngineUrl = String.fromEnvironment(
-    'CONTEXT_ENGINE_URL',
-    defaultValue: 'https://myna-ce-dev.glassdata.ai/inp',
-  );
+  // Interaction Engine — WebSocket
+  static String get interactionWsUrl => dotenv.env['INTERACTION_WS_URL'] ?? const String.fromEnvironment('INTERACTION_WS_URL');
 
-  static const String interactionSubUrl = String.fromEnvironment(
-    'INTERACTION_SUB_URL',
-    defaultValue: 'https://myna-ie-dev.glassdata.ai/process',
-  );
+  // Behaviour Engine — POST /api/v1/process
+  static String get behaviourIntentUrl => dotenv.env['BEHAVIOR_ENGINE_URL'] ?? const String.fromEnvironment('BEHAVIOR_ENGINE_URL');
 
-  static const String interactionWsUrl = String.fromEnvironment(
-    'INTERACTION_WS_URL',
-    defaultValue: 'wss://myna-ie-dev.glassdata.ai/ws',
-  );
+  // Ecom Ad Handler
+  static String get actionHubBaseUrl => dotenv.env['ACTION_HUB_BASE_URL'] ?? const String.fromEnvironment('ACTION_HUB_BASE_URL');
+  static String get actionHubBuyUrl => dotenv.env['ACTION_HUB_BUY_URL'] ?? const String.fromEnvironment('ACTION_HUB_BUY_URL');
+  static String get actionHubRecommendUrl => dotenv.env['ACTION_HUB_RECOMMEND_URL'] ?? const String.fromEnvironment('ACTION_HUB_RECOMMEND_URL');
+  static String get actionHubLifebalanceUrl => dotenv.env['ACTION_HUB_LIFEBALANCE_URL'] ?? const String.fromEnvironment('ACTION_HUB_LIFEBALANCE_URL');
+  static String get actionHubAnalyzeUrl => dotenv.env['ACTION_HUB_ANALYZE_URL'] ?? const String.fromEnvironment('ACTION_HUB_ANALYZE_URL');
 
-  static const String actionHubBaseUrl = String.fromEnvironment(
-    'ACTION_HUB_BASE_URL',
-    defaultValue: 'https://myna-ah-dev.glassdata.ai',
-  );
-
-  static const String actionHubBuyUrl = '\$actionHubBaseUrl/buy';
-  static const String actionHubRecommendUrl = '\$actionHubBaseUrl/recommend';
-  static const String actionHubLifebalanceUrl = '\$actionHubBaseUrl/lifebalance';
-  static const String actionHubAnalyzeUrl = '\$actionHubBaseUrl/analyze';
-
-  static const String behaviourIntentUrl = String.fromEnvironment(
-    'BEHAVIOR_ENGINE_URL',
-    defaultValue: String.fromEnvironment(
-      'BEHAVIOR_INTENT_URL',
-      defaultValue: 'https://myna-be-dev.glassdata.ai/api/v1/process',
-    ),
-  );
-
-  static const String safetyMemoryUrl = String.fromEnvironment(
-    'SAFETY_MEMORY_URL',
-    defaultValue: 'https://myna-sme-dev.glassdata.ai/api/release',
-  );
+  // Safety Memory Engine — POST /api/release
+  static String get safetyMemoryUrl => dotenv.env['SAFETY_MEMORY_URL'] ?? const String.fromEnvironment('SAFETY_MEMORY_URL');
 }

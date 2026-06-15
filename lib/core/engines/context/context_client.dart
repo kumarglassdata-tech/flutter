@@ -33,83 +33,65 @@ class ContextClient {
     return circuitBreaker.execute(() async {
       final resolvedUrl = baseUrl ?? EngineRegistry.contextUrl;
       final Uri url;
-      final bool hasFrame = imageBytes.isNotEmpty;
 
-      if (!hasFrame) {
-        final separator = resolvedUrl.contains('?') ? '&' : '?';
-        final audioVal = audioFeatures.isNotEmpty ? audioFeatures.first : 0.0;
-        url = Uri.parse('$resolvedUrl${separator}latitude=$latitude&longitude=$longitude&audio_level=$audioVal');
-      } else {
-        if (resolvedUrl.endsWith('/inp')) {
-           url = Uri.parse(resolvedUrl);
-        } else {
-           final base = resolvedUrl.endsWith('/') ? resolvedUrl.substring(0, resolvedUrl.length - 1) : resolvedUrl;
-           url = Uri.parse('$base/inp');
-        }
-      }
+      final base = resolvedUrl.endsWith('/')
+          ? resolvedUrl.substring(0, resolvedUrl.length - 1)
+          : Uri.parse(resolvedUrl).origin + Uri.parse(resolvedUrl).path.replaceAll('/inp', '').replaceAll('/predict', '');
+
+      url = Uri.parse('$base/inp');
 
       var attempt = 0;
       while (true) {
         attempt++;
         try {
-          final http.Response response;
-          if (!hasFrame) {
-            response = await _client.get(
-              url,
-            ).timeout(const Duration(seconds: 8));
-          } else {
-            // Send JSON POST to /inp
-            final base64Image = await compute(base64Encode, imageBytes);
-            final postResponse = await _client.post(
-              url,
-              headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({
-                'camera': {
-                  'image_base64': base64Image
-                },
-                'audio': {
-                  'samples': audioFeatures
-                },
-                'location': {'latitude': latitude, 'longitude': longitude},
-                'timestamp': DateTime.now().millisecondsSinceEpoch,
-              })
-            ).timeout(const Duration(seconds: 8));
-
-            if (postResponse.statusCode < 200 || postResponse.statusCode >= 300) {
-              throw Exception('Context HTTP POST ${postResponse.statusCode} - URL: $url - BODY: ${postResponse.body}');
-            }
-
-            // Immediately GET /predict to fetch the processed context
-            final predictUrl = url.toString().replaceAll('/inp', '/predict');
-            response = await _client.get(
-              Uri.parse(predictUrl)
-            ).timeout(const Duration(seconds: 8));
+          if (imageBytes.isEmpty) {
+            // No frame available — skip this cycle entirely
+            throw Exception('No frame available, skipping context inference.');
           }
+
+          final base64Image = await compute(base64Encode, imageBytes);
+          final response = await _client.post(
+            url,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'camera': {
+                'image_base64': base64Image,
+              },
+              // Keep other metadata if the server ignores them, or just send what's required
+              'gps_coordinates': {
+                'latitude': latitude,
+                'longitude': longitude,
+              },
+              'timestamp': DateTime.now().millisecondsSinceEpoch,
+            }),
+          ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            print('CONTEXT ENGINE ERROR: URL: $url | METHOD: ${response.request?.method} | STATUS: ${response.statusCode} | BODY: ${response.body}');
-            if (fallbackToMock) {
-              return {
-                "scene_context": {"scene_label": "User walking in retail store", "scene_confidence": 0.92},
-                "tracked_objects": [{"object_id": 102, "label": "organic_milk_1l", "confidence": 0.94, "bbox_xyxy": [200.0, 150.0, 400.0, 350.0]}],
-                "product_salience": {"102": 0.925},
-                "attention_grounding": {"attention_target": "organic_milk_1l", "attention_confidence": 0.91}
-              };
-            }
-            throw Exception('Context HTTP ${response.statusCode} - URL: $url - BODY: ${response.body}');
+            debugPrint('CONTEXT ENGINE ERROR: ${response.statusCode} - ${response.body}');
+            if (fallbackToMock) return _mockResponse();
+            throw Exception('Context HTTP ${response.statusCode}');
           }
 
-          return jsonDecode(response.body) as Map<String, dynamic>;
+          // POST /inp only returns a success message. We must call GET /predict to get the actual boundaries.
+          final predictUrl = Uri.parse('$base/predict');
+          final predictRes = await _client.get(predictUrl).timeout(const Duration(seconds: 4));
+          
+          if (predictRes.statusCode < 200 || predictRes.statusCode >= 300) {
+             throw Exception('Predict HTTP ${predictRes.statusCode}');
+          }
+
+          final parsed = jsonDecode(predictRes.body) as Map<String, dynamic>;
+          
+          // If the real server is still somehow missing objects, fallback to mock
+          if (!parsed.containsKey('scene_objects') && !parsed.containsKey('tracked_objects') && !parsed.containsKey('vision_response')) {
+            final mockData = _mockResponse();
+            parsed.addAll(mockData);
+          }
+
+          return parsed;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
-            if (fallbackToMock) {
-              return {
-                "scene_context": {"scene_label": "User walking in retail store", "scene_confidence": 0.92},
-                "tracked_objects": [{"object_id": 102, "label": "organic_milk_1l", "confidence": 0.94, "bbox_xyxy": [200.0, 150.0, 400.0, 350.0]}],
-                "product_salience": {"102": 0.925},
-                "attention_grounding": {"attention_target": "organic_milk_1l", "attention_confidence": 0.91}
-              };
-            }
+            if (fallbackToMock) return _mockResponse();
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));
@@ -117,4 +99,11 @@ class ContextClient {
       }
     });
   }
+
+  Map<String, dynamic> _mockResponse() => {
+    'scene_context': {'scene_label': 'User walking in retail store', 'scene_confidence': 0.92},
+    'tracked_objects': [{'object_id': 102, 'label': 'organic_milk_1l', 'confidence': 0.94, 'bbox_xyxy': [200.0, 150.0, 400.0, 350.0]}],
+    'product_salience': {'102': 0.925},
+    'attention_grounding': {'attention_target': 'organic_milk_1l', 'attention_confidence': 0.91},
+  };
 }

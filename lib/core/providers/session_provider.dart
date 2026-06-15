@@ -385,7 +385,7 @@ class SessionProvider extends ChangeNotifier {
       sourceManager: sourceManager,
     );
 
-    // 3. Set up AudioStreamManager
+    // 3. Set up AudioStreamManager — connect WebSocket only, mic starts on user tap
     audioStreamManager = AudioStreamManager();
     audioStreamManager.init().then((_) {
       audioStreamManager.connect(EnvConfig.interactionWsUrl);
@@ -427,7 +427,6 @@ class SessionProvider extends ChangeNotifier {
 
       if (interactionResponse.lastUtterance.isNotEmpty && interactionResponse.lastUtterance != _lastSpokenUtterance) {
         _lastSpokenUtterance = interactionResponse.lastUtterance;
-        flutterTts.speak(_lastSpokenUtterance);
       }
 
       // Force update lastBIEFrame so the E-com UI and pipeline can see the new salience score if BCP is present
@@ -729,10 +728,9 @@ class SessionProvider extends ChangeNotifier {
       }
 
       healthMonitor.resetAllCircuits();
-      await audioStreamManager.init();
-      audioStreamManager.connect(EnvConfig.interactionWsUrl);
       streamCoordinator.start();
-      _addLog('Real-time ingestion pipeline running.');
+      await audioStreamManager.startVad();
+      _addLog('Real-time ingestion pipeline running. VAD listening.');
 
       // Removed HTTP audio loop as WebSockets are used now.
     } catch (e) {
@@ -746,6 +744,7 @@ class SessionProvider extends ChangeNotifier {
   Future<void> stopRuntime() async {
     _addLog('Stopping real-time stream coordinator...');
     await _audioService.stop();
+    await audioStreamManager.stopVad();
     await audioStreamManager.disconnect();
     streamCoordinator.stop();
     _state = _state.copyWith(
@@ -770,9 +769,7 @@ class SessionProvider extends ChangeNotifier {
   }
 
   void _startHealthProbes() {
-    if (kIsWeb || Platform.environment.containsKey('FLUTTER_TEST')) {
-      return;
-    }
+    if (kIsWeb) return;
     _healthProbeTimer?.cancel();
     _healthProbeTimer = Timer.periodic(const Duration(seconds: 8), (_) {
       _runHealthProbes();
@@ -804,14 +801,15 @@ class SessionProvider extends ChangeNotifier {
         if (kIsWeb) {
           reachable = true;
         } else {
-          final host = endpoint.host;
-          int port = endpoint.port;
-          if (port == 0) {
-            port = endpoint.scheme == 'https' ? 443 : 80;
+          // Use HTTP GET instead of raw TCP socket to bypass reverse proxies/WAF blocks
+          try {
+            final response = await http.get(endpoint).timeout(const Duration(seconds: 4));
+            // Even a 404/405/500 means the host is reachable
+            reachable = true;
+          } catch (e) {
+             reachable = false;
+             throw e;
           }
-          final socket = await Socket.connect(host, port, timeout: const Duration(seconds: 2));
-          socket.destroy();
-          reachable = true;
         }
       } catch (e) {
         lastError = e.toString();
@@ -890,7 +888,6 @@ class SessionProvider extends ChangeNotifier {
         interactionOutput.lastUtterance.isNotEmpty && 
         interactionOutput.lastUtterance != _lastSpokenUtterance) {
       _lastSpokenUtterance = interactionOutput.lastUtterance;
-      flutterTts.speak(_lastSpokenUtterance); // RE-ENABLED: Fallback for missing WebSocket PCM audio
     }
 
     final topSalient = (contextOutput?.topSalientObjects != null && contextOutput!.topSalientObjects.isNotEmpty)

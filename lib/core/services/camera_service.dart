@@ -172,6 +172,8 @@ class CameraService extends ChangeNotifier {
 
   Future<void> stopStreaming() async {
     _isStreaming = false;
+    _captureTimer?.cancel();
+    _captureTimer = null;
     if (_controller != null && _controller!.value.isStreamingImages) {
       await _controller!.stopImageStream();
     }
@@ -182,6 +184,14 @@ class CameraService extends ChangeNotifier {
     final wasStreaming = _isStreaming;
     await stopStreaming();
     _streamStartedAt = null;
+
+    // WAIT for any active capture to finish before disposing the hardware!
+    while (_captureInFlight) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    
+    // Give the MTK Camera HAL a tiny buffer to flush its file descriptors
+    await Future.delayed(const Duration(milliseconds: 200));
 
     await _controller?.dispose();
     _controller = null;
