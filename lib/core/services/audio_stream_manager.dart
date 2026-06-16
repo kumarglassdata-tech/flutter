@@ -11,7 +11,7 @@ import 'package:audio_session/audio_session.dart';
 // RMS amplitude threshold — tune for smart glasses mic sensitivity
 // 0.01 = very sensitive, 0.05 = moderate, 0.10 = only loud speech
 const double _kSpeechThreshold = 0.02;
-const Duration _kSilenceTimeout = Duration(milliseconds: 400);
+const Duration _kSilenceTimeout = Duration(milliseconds: 800);
 
 class AudioStreamManager {
   WebSocketChannel? _channel;
@@ -82,6 +82,15 @@ class AudioStreamManager {
     }
     _vadActive = true;
     _isSpeaking = false;
+
+    // Ensure any stuck native recording session is killed before starting a new one
+    try {
+      if (await _audioRecorder.isRecording()) {
+        await _audioRecorder.stop();
+      }
+    } catch (e) {
+      debugPrint('[AudioStreamManager] Non-fatal error stopping previous recorder: $e');
+    }
 
     final stream = await _audioRecorder.startStream(const RecordConfig(
       encoder: AudioEncoder.pcm16bits,
@@ -284,9 +293,6 @@ class AudioStreamManager {
 
   void triggerBargeIn() {
     if (!_isPlaying) return;
-    // Send interruption signal to the server, but DO NOT stop the local stream yet.
-    // The server will decide whether to halt the audio (by sending an audio_end message)
-    // based on its barge-in configuration. This prevents acoustic echo from instantly muting the app!
     _safeSinkAdd(jsonEncode({'type': 'user_interruption'}));
   }
 

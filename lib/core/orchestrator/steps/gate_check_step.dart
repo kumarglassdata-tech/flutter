@@ -19,40 +19,15 @@ class GateCheckStep extends PipelineStep<BIEFrame, bool> {
 
       GateDecision decision;
 
-      if (beGateOpen == false) {
-        // BE explicitly says do not interact
-        decision = GateDecision(
-          shouldInteract: false,
-          shouldRunEcom: false,
-          shouldPersistMemory: true,
-          relevanceScore: score,
-          reason: 'BE suppressed: ${suppressReason ?? "gate_open=false"}',
-        );
-      } else if (score < 0.5) {
-        decision = GateDecision(
-          shouldInteract: false,
-          shouldRunEcom: false,
-          shouldPersistMemory: false,
-          relevanceScore: score,
-          reason: 'Low relevance ($score). Halting pipeline interactions.',
-        );
-      } else if (score < 0.85) {
-        decision = GateDecision(
-          shouldInteract: true,
-          shouldRunEcom: false,
-          shouldPersistMemory: true,
-          relevanceScore: score,
-          reason: 'Moderate relevance ($score). Triggering interaction only.',
-        );
-      } else {
-        decision = GateDecision(
-          shouldInteract: true,
-          shouldRunEcom: true,
-          shouldPersistMemory: true,
-          relevanceScore: score,
-          reason: 'High relevance ($score). Triggering interaction and Action Hub lookup.',
-        );
-      }
+      // DEMO OVERRIDE: Force the gate to ALWAYS be open so the AI responds continuously.
+      // Ignoring BE suppression and low salience scores to ensure constant interaction.
+      decision = GateDecision(
+        shouldInteract: true,
+        shouldRunEcom: score >= 0.85,
+        shouldPersistMemory: true,
+        relevanceScore: score,
+        reason: 'FORCED OPEN FOR DEMO (Original BE Gate: $beGateOpen, Score: $score)',
+      );
 
       sharedState['gate_decision'] = decision;
       sharedState['gate_reason'] = decision.reason;
