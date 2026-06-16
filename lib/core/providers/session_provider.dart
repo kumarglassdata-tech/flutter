@@ -385,12 +385,26 @@ class SessionProvider extends ChangeNotifier {
       sourceManager: sourceManager,
     );
 
-    // 3. Set up AudioStreamManager — connect WebSocket only, mic starts on user tap
+    // 3. Set up AudioStreamManager — connect WebSocket
     audioStreamManager = AudioStreamManager();
-    audioStreamManager.init().then((_) {
+    _audioInitFuture = audioStreamManager.init();
+    _audioInitFuture.then((_) {
       audioStreamManager.connect(EnvConfig.interactionWsUrl);
     });
+    
+    _initAudioStreamListeners(interactionClient);
+  }
 
+  late Future<void> _audioInitFuture;
+
+  /// Called after permissions are explicitly granted in the UI
+  Future<void> startAlwaysListening() async {
+    await _audioInitFuture;
+    await audioStreamManager.startVad();
+    _addLog('Always-Listening mode activated.');
+  }
+
+  void _initAudioStreamListeners(InteractionClient interactionClient) {
     audioStreamManager.transcriptStream.listen((text) async {
       if (text.isNotEmpty && text != _lastSpokenUtterance) {
         _lastSpokenUtterance = text;
@@ -1017,6 +1031,13 @@ class SessionProvider extends ChangeNotifier {
       }
     });
     return result;
+  }
+
+  // ==========================================
+  // Public Event Logging
+  // ==========================================
+  void logEvent(String message) {
+    _addLog(message);
   }
 
   void _addLog(String message) {

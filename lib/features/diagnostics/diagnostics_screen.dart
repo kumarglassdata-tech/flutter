@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/features/shell/app_shell.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
+import 'package:smartglass_flutter/features/diagnostics/widgets/pipeline_visualizer.dart';
+import 'package:smartglass_flutter/features/diagnostics/widgets/permissions_auditor.dart';
 
 class DiagnosticsScreen extends StatelessWidget {
   const DiagnosticsScreen({super.key});
@@ -19,11 +21,14 @@ class DiagnosticsScreen extends StatelessWidget {
         title: const Text('Diagnostics',
             style: TextStyle(fontWeight: FontWeight.w700)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const PermissionsAuditor(),
+            const SizedBox(height: 16),
             // Metrics Card
             Card(
               child: Padding(
@@ -54,6 +59,8 @@ class DiagnosticsScreen extends StatelessWidget {
               ),
             ).animate().fadeIn(duration: 400.ms),
 
+            const SizedBox(height: 16),
+            const PipelineVisualizer(),
             const SizedBox(height: 20),
 
             Row(
@@ -78,7 +85,8 @@ class DiagnosticsScreen extends StatelessWidget {
             const SizedBox(height: 10),
 
             // Console
-            Expanded(
+            SizedBox(
+              height: 300,
               child: Container(
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A),
@@ -145,6 +153,7 @@ class DiagnosticsScreen extends StatelessWidget {
             const SizedBox(height: 8),
           ],
         ),
+      ),
       ),
     );
   }

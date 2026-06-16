@@ -26,11 +26,26 @@ class MemoryClient {
   Future<Map<String, dynamic>> storeMemory(Map<String, dynamic> payload) async {
     return circuitBreaker.execute(() async {
       final url = Uri.parse(baseUrl ?? EngineRegistry.getEngineUrl('memory'));
-      final response = await _client.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      ).timeout(const Duration(seconds: 8));
+      
+      var request = http.MultipartRequest('POST', url);
+      
+      // Add standard fields
+      payload.forEach((key, value) {
+        if (key != 'content') {
+           request.fields[key] = value.toString();
+        }
+      });
+      
+      // Add the content as the 'file' field the backend requires
+      final contentStr = payload['content']?.toString() ?? '';
+      request.files.add(http.MultipartFile.fromString(
+        'file',
+        contentStr,
+        filename: 'memory.txt'
+      ));
+      
+      final streamedResponse = await _client.send(request).timeout(const Duration(seconds: 8));
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw Exception('Memory store failed: HTTP ${response.statusCode}');

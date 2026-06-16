@@ -11,7 +11,7 @@ import 'package:audio_session/audio_session.dart';
 // RMS amplitude threshold — tune for smart glasses mic sensitivity
 // 0.01 = very sensitive, 0.05 = moderate, 0.10 = only loud speech
 const double _kSpeechThreshold = 0.02;
-const Duration _kSilenceTimeout = Duration(milliseconds: 800);
+const Duration _kSilenceTimeout = Duration(milliseconds: 400);
 
 class AudioStreamManager {
   WebSocketChannel? _channel;
@@ -63,10 +63,11 @@ class AudioStreamManager {
         usage: AndroidAudioUsage.media,
         flags: AndroidAudioFlags.none,
       ),
-      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
       androidWillPauseWhenDucked: false,
     ));
-    await FlutterPcmSound.setup(sampleRate: 16000, channelCount: 1);
+    // The Interaction Engine backend streams 24kHz PCM-16 TTS
+    await FlutterPcmSound.setup(sampleRate: 24000, channelCount: 1);
   }
 
   // ---------------------------------------------------------------------------
@@ -90,6 +91,12 @@ class AudioStreamManager {
 
     _micSubscription = stream.listen((Uint8List chunk) {
       if (!_vadActive) return;
+      
+      // PERMANENT ECHO FIX: Completely drop microphone frames while the AI is speaking.
+      // This guarantees the AI can never hear itself, never trigger false VAD, 
+      // and never cut itself off mid-sentence.
+      if (_isPlaying) return;
+
       final rms = _calculateRms(chunk);
 
       if (rms >= _kSpeechThreshold) {
@@ -99,7 +106,6 @@ class AudioStreamManager {
         if (!_isSpeaking) {
           _isSpeaking = true;
           debugPrint('[VAD] Speech started (rms=${rms.toStringAsFixed(4)})');
-          triggerBargeIn(); // only fires if assistant is playing
           _safeSinkAdd(jsonEncode({'type': 'start_of_speech'}));
         }
         // Stream chunk to server while speaking
@@ -118,6 +124,18 @@ class AudioStreamManager {
           });
         }
       }
+    }, onError: (err) {
+      debugPrint('[AudioStreamManager] Mic stream error: $err. Restarting...');
+      _vadActive = false;
+      _micSubscription?.cancel();
+      _micSubscription = null;
+      Future.delayed(const Duration(seconds: 1), startVad);
+    }, onDone: () {
+      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly. Restarting...');
+      _vadActive = false;
+      _micSubscription?.cancel();
+      _micSubscription = null;
+      Future.delayed(const Duration(seconds: 1), startVad);
     });
   }
 
@@ -266,8 +284,10 @@ class AudioStreamManager {
 
   void triggerBargeIn() {
     if (!_isPlaying) return;
+    // Send interruption signal to the server, but DO NOT stop the local stream yet.
+    // The server will decide whether to halt the audio (by sending an audio_end message)
+    // based on its barge-in configuration. This prevents acoustic echo from instantly muting the app!
     _safeSinkAdd(jsonEncode({'type': 'user_interruption'}));
-    _stopStream();
   }
 
   void _safeSinkAdd(dynamic data) {
@@ -338,6 +358,11 @@ class AudioStreamManager {
     _audioQueue.clear();
     while (_isProcessingQueue) {
       await Future.delayed(const Duration(milliseconds: 10));
+    }
+    try {
+      await FlutterPcmSound.stop().timeout(const Duration(milliseconds: 500));
+    } catch (e) {
+      debugPrint('[AudioStreamManager] Failed to stop PCM stream: $e');
     }
     _isStopping = false;
   }

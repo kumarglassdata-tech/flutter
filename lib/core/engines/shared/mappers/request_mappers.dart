@@ -62,31 +62,35 @@ class RequestMappers {
   }
 
   static Map<String, dynamic> toInteractionRequest(BIEFrame bieFrame, {double? lat, double? lon, String? city, String? country}) {
-    final primitives = bieFrame.raw['interaction_primitives'] as Map? ?? {};
-    final pickup = primitives['pickup'] as Map? ?? {};
-    final rotation = primitives['product_rotation'] as Map? ?? {};
-    final reach = primitives['shelf_reach'] as Map? ?? {};
-    final comparison = primitives['product_comparison'] as Map? ?? {};
+    final raw = bieFrame.raw;
+    final topSalientObjects = raw['top_salient_objects'] ?? [
+      {'class_name': bieFrame.gazeTarget, 'salience_score': bieFrame.salienceScore}
+    ];
 
     return {
-      'intent': bieFrame.intent,
-      'timestamp_ms': DateTime.now().millisecondsSinceEpoch,
-      'gaze_target': bieFrame.gazeTarget,
-      'alignment_score': (bieFrame.raw['gaze_grounding'] as Map?)?['alignment_score'] ?? 0.95,
+      'timestamp_ms': raw['timestamp_ms'] ?? DateTime.now().millisecondsSinceEpoch,
+      'behavioral_state': bieFrame.behavioralState,
+      'state_confidence': bieFrame.stateConfidence,
+      'intent_probs': raw['intent_probs'] ?? {},
+      'entropy': raw['entropy'] ?? 0.0,
+      'top_salient_objects': topSalientObjects,
+      'hesitation_score': raw['hesitation_score'] ?? 0.0,
+      'comparison_detected': raw['comparison_detected'] ?? false,
+      'comparison_objects': raw['comparison_objects'] ?? [],
       'relevance_score': bieFrame.salienceScore,
-      'ambient_noise': bieFrame.raw['ambient_noise'] ?? -45.0,
-      'pickup_active': pickup['active'] ?? false,
-      'rotation_active': rotation['active'] ?? false,
-      'reach_active': reach['active'] ?? false,
-      'compare_active': comparison['active'] ?? false,
-      'compared_items': (comparison['compared_items'] as List? ?? []).map((e) => e.toString()).toList(),
-      'cpu_temp': (bieFrame.raw['meta'] as Map?)?['telemetry']?['temperature_c'] ?? 32.0,
-      'throttled': (bieFrame.raw['meta'] as Map?)?['telemetry']?['is_throttled'] ?? false,
-      'text_input': '',
-      if (lat != null) 'latitude': lat,
-      if (lon != null) 'longitude': lon,
-      if (city != null) 'city': city,
-      if (country != null) 'country': country,
+      'prompt_worthiness': raw['prompt_worthiness'] ?? false,
+      'primary_object_dwell_ms': raw['primary_object_dwell_ms'] ?? 0.0,
+      'primary_object_revisit_n': raw['primary_object_revisit_n'] ?? 0,
+      'gate_open': raw['gate_open'] ?? true,
+      'suppress_reason': raw['suppress_reason'],
+      'degraded_flags': raw['degraded_flags'] ?? {},
+      'emitted': raw['emitted'] ?? true,
+      'cpu_temp': (raw['meta'] as Map?)?['telemetry']?['temperature_c'] ?? 32.0,
+      'throttled': (raw['meta'] as Map?)?['telemetry']?['is_throttled'] ?? false,
+      if (lat != null) 'user_latitude': lat,
+      if (lon != null) 'user_longitude': lon,
+      if (city != null) 'user_city': city,
+      if (country != null) 'user_country': country,
     };
   }
 

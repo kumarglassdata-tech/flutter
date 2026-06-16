@@ -73,6 +73,10 @@ class _AppShellState extends State<AppShell> {
       Permission.microphone,
       Permission.location,
     ].request();
+    
+    if (mounted) {
+      context.read<SessionProvider>().startAlwaysListening();
+    }
   }
 
   @override
@@ -140,7 +144,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems(context, auth);
+    final items = _navItems();
     final currentIndex = _currentIndex(currentLocation);
 
     return Container(
@@ -181,7 +185,7 @@ class _SideRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems(context, auth);
+    final items = _navItems();
     final currentIndex = _currentIndex(currentLocation);
 
     return NavigationRail(
@@ -350,11 +354,13 @@ class _NavItem {
   const _NavItem(this.label, this.icon, this.route);
 }
 
-List<_NavItem> _navItems(BuildContext context, AuthProvider auth) => const [
-      _NavItem('HOME', Icons.home_rounded, '/home'),
-      _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
-      _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
-    ];
+List<_NavItem> _navItems() {
+  return const [
+    _NavItem('HOME', Icons.home_rounded, '/home'),
+    _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
+    _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
+  ];
+}
 
 int _currentIndex(String location) {
   if (location.startsWith('/fop')) return 1;
@@ -363,8 +369,9 @@ int _currentIndex(String location) {
 }
 
 void _onTap(BuildContext context, int index, AuthProvider auth) {
-  final routes = ['/home', '/fop', '/profile'];
-  final route = routes[index];
+  final items = _navItems();
+  if (index < 0 || index >= items.length) return;
+  final route = items[index].route;
   if (!auth.isLoggedIn && route != '/home') {
     context.go('/login?target=${Uri.encodeComponent(route)}');
   } else {

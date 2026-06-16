@@ -26,7 +26,6 @@ class ContextClient {
 
   Future<Map<String, dynamic>> sendContext({
     required Uint8List imageBytes,
-    required List<double> audioFeatures,
     required double latitude,
     required double longitude,
   }) async {
@@ -57,12 +56,12 @@ class ContextClient {
               'camera': {
                 'image_base64': base64Image,
               },
-              // Keep other metadata if the server ignores them, or just send what's required
-              'gps_coordinates': {
-                'latitude': latitude,
-                'longitude': longitude,
-              },
-              'timestamp': DateTime.now().millisecondsSinceEpoch,
+              'telemetry': {
+                'gps': {
+                  'latitude': latitude,
+                  'longitude': longitude,
+                }
+              }
             }),
           ).timeout(const Duration(seconds: 8));
 

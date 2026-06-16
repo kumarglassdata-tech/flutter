@@ -7,8 +7,8 @@ import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
 
+import 'dart:ui';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
@@ -24,6 +24,17 @@ void main() async {
     cameraService,
     metaSdkService: const MetaGlassesSdkService(),
   );
+
+  // Hook global platform and framework errors to stream directly into the Diagnostics tab
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    session.logEvent('Flutter Error: ${details.exceptionAsString()}');
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    session.logEvent('Platform Error: $error');
+    return true;
+  };
 
   runApp(SmartGlassApp(auth: auth, settings: settings, session: session));
 }
@@ -46,7 +57,7 @@ class SmartGlassApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider.value(value: settings),
-        ChangeNotifierProvider(create: (_) => session),
+        ChangeNotifierProvider.value(value: session),
       ],
       child: Builder(
         builder: (context) {

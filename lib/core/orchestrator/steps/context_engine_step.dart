@@ -25,7 +25,6 @@ class ContextEngineStep extends PipelineStep<UnifiedInput, ContextEngineOutput> 
     try {
       final response = await _client.sendContext(
         imageBytes: imageBytes,
-        audioFeatures: [audioLevel],
         latitude: lat,
         longitude: lon,
       );
