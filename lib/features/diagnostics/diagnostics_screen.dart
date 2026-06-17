@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +14,7 @@ class DiagnosticsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<SessionProvider>().state;
+    final telemetryLogs = context.watch<SessionProvider>().telemetryService.logs;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -135,6 +137,116 @@ class DiagnosticsScreen extends StatelessWidget {
               ).animate().fadeIn(delay: 300.ms),
             ),
 
+            const SizedBox(height: 24),
+
+            // Diagnostic Telemetry Logs Console
+            Row(
+              children: [
+                const Icon(Icons.bug_report_rounded,
+                    color: AppTheme.primary, size: 20),
+                const SizedBox(width: 8),
+                Text('Diagnostic Telemetry',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                const Spacer(),
+                Text(
+                  '${telemetryLogs.length} logs',
+                  style: const TextStyle(
+                      color: AppTheme.onSurfaceVariant, fontSize: 12),
+                ),
+              ],
+            ).animate().fadeIn(delay: 350.ms),
+
+            const SizedBox(height: 10),
+
+            SizedBox(
+              height: 400,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: telemetryLogs.isEmpty ? 1 : telemetryLogs.length,
+                    itemBuilder: (_, i) {
+                      if (telemetryLogs.isEmpty) {
+                        return const Text(
+                          '> Waiting for telemetry...',
+                          style: TextStyle(
+                              color: Colors.grey,
+                              fontFamily: 'monospace',
+                              fontSize: 12),
+                        );
+                      }
+                      final log = telemetryLogs[i];
+                      final isError = log.isError;
+                      final headerColor = isError ? const Color(0xFFEF4444) : const Color(0xFF38BDF8);
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '[${log.timestamp.toIso8601String()}] [${log.source}] ${log.message}',
+                              style: TextStyle(
+                                  color: headerColor,
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12),
+                            ),
+                            if (log.jsonPayload != null) ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _formatJson(log.jsonPayload!),
+                                  style: const TextStyle(
+                                      color: Color(0xFF94A3B8),
+                                      fontFamily: 'monospace',
+                                      fontSize: 11),
+                                ),
+                              ),
+                            ],
+                            if (log.stackTrace != null) ...[
+                              const SizedBox(height: 4),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0x22EF4444),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  log.stackTrace!,
+                                  style: const TextStyle(
+                                      color: Color(0xFFFCA5A5),
+                                      fontFamily: 'monospace',
+                                      fontSize: 11),
+                                ),
+                              ),
+                            ],
+                            const Divider(color: Color(0xFF1E293B)),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ).animate().fadeIn(delay: 400.ms),
+            ),
+
             const SizedBox(height: 12),
 
             SizedBox(
@@ -153,16 +265,25 @@ class DiagnosticsScreen extends StatelessWidget {
             const SizedBox(height: 8),
           ],
         ),
-      ),
+        ),
       ),
     );
+  }
+
+  String _formatJson(String raw) {
+    try {
+      final decoded = jsonDecode(raw);
+      return const JsonEncoder.withIndent('  ').convert(decoded);
+    } catch (_) {
+      return raw;
+    }
   }
 }
 
 class _DiagRow extends StatelessWidget {
   final String label;
   final String value;
-  const _DiagRow(this.label, this.value);
+  const _DiagRow(this.label, this.value, {super.key});
 
   @override
   Widget build(BuildContext context) {

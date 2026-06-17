@@ -16,6 +16,8 @@ class StreamCoordinator extends ChangeNotifier {
   StreamSubscription<AudioChunk>? _audioSub;
   StreamSubscription<LocationData>? _locationSub;
 
+  final Map<String, dynamic>? Function()? getActiveVoiceNlu;
+
   // Latests stashed sensor data
   AudioChunk? _latestAudio;
   LocationData? _latestLocation;
@@ -30,6 +32,7 @@ class StreamCoordinator extends ChangeNotifier {
     required SourceManager sourceManager,
     required PipelineCoordinator pipelineCoordinator,
     required TelemetryService telemetryService,
+    this.getActiveVoiceNlu,
   })  : _sourceManager = sourceManager,
         _pipelineCoordinator = pipelineCoordinator,
         _telemetryService = telemetryService;
@@ -105,7 +108,11 @@ class StreamCoordinator extends ChangeNotifier {
           ? InputSource.META
           : (_sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK),
       timestamp: DateTime.now(),
-      metadata: metadata ?? const {},
+      metadata: {
+        ...(metadata ?? {}),
+        if (getActiveVoiceNlu != null && getActiveVoiceNlu!() != null)
+          'voice_nlu': getActiveVoiceNlu!(),
+      },
     );
 
     try {

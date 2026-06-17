@@ -41,7 +41,8 @@ class EngineInspectorScreen extends StatelessWidget {
 
     // Dynamically retrieve requests & responses from model context
     final contextReq = {
-      'audio_level': session.state.audioLevel,
+      'image': '<base64_encoded_jpeg_bytes>',
+      'audio': [session.state.audioLevel],
       'location': {
         'latitude': session.state.latitude ?? 0.0,
         'longitude': session.state.longitude ?? 0.0,
@@ -50,36 +51,56 @@ class EngineInspectorScreen extends StatelessWidget {
     };
     final contextRes = sharedState['context'] as Map<String, dynamic>?;
 
-    final behaviorReq = sharedState['context'] != null ? {'context_data': sharedState['context']} : null;
+    final behaviorReq = session.state.lastContextOutput != null 
+        ? {
+            'scene_context': session.state.lastContextOutput!.sceneContext,
+            'tracked_objects': session.state.lastContextOutput!.trackedObjects,
+            'top_salient_objects': session.state.lastContextOutput!.topSalientObjects,
+            'hazards_detected': session.state.lastContextOutput!.raw['gps_response']?['hazard_detection']?['hazard_detected'] ?? false,
+            'meta': session.state.lastContextOutput!.raw['meta'] ?? {},
+            'session_id': 'wearer_001',
+            'timestamp_ms': DateTime.now().millisecondsSinceEpoch,
+          }
+        : null;
     final behaviorRes = sharedState['behavior'] as Map<String, dynamic>?;
 
     final interactionReq = sharedState['behavior'] != null 
         ? {
-            'dialogue_mode': 'query',
-            'utterance': 'User looking at ${session.state.lastBIEFrame?.gazeTarget}',
-            'bcp': {
-              'relevance_score': session.state.lastBIEFrame?.salienceScore,
-              'behavioral_state': session.state.lastBIEFrame?.intent,
-            }
+            'gaze_target': session.state.lastBIEFrame?.gazeTarget ?? 'Unknown',
+            'alignment_score': 0.95,
+            'relevance_score': session.state.lastBIEFrame?.salienceScore ?? 0.85,
+            'ambient_noise': -45.0,
+            'pickup_active': session.state.lastBIEFrame?.intent == 'purchase_consideration',
+            'rotation_active': false,
+            'reach_active': false,
+            'compare_active': false,
+            'compared_items': [],
+            'cpu_temp': 32.0,
+            'throttled': false,
+            'text_input': null, // Replaced by WebSocket Audio Stream
+            'latitude': session.state.latitude ?? 17.3850,
+            'longitude': session.state.longitude ?? 78.4867,
+            'city': session.state.city ?? "Hyderabad",
+            'country': "India"
           }
         : null;
     final interactionRes = sharedState['interaction'] as Map<String, dynamic>?;
 
     final ecomReq = session.state.lastBIEFrame != null 
         ? {
+            'action_type': 'recommend',
+            'salient_objects': [session.state.lastBIEFrame!.gazeTarget],
+            'interaction_mode': 'RECOMMENDATION',
+            'relevance_score': session.state.lastBIEFrame!.salienceScore,
             'gaze_target': session.state.lastBIEFrame!.gazeTarget,
-            'intent_scoring': {
-              'salience_score': session.state.lastBIEFrame!.salienceScore,
-              'class_name': session.state.lastBIEFrame!.gazeTarget,
-            }
+            'timestamp': DateTime.now().millisecondsSinceEpoch,
           }
         : null;
     final ecomRes = sharedState['ecom'] as Map<String, dynamic>?;
 
     final memoryReq = session.state.lastBIEFrame != null
         ? {
-            'query': session.state.lastBIEFrame!.gazeTarget,
-            'store_intent': session.state.lastBIEFrame!.intent,
+            'text': session.state.lastBIEFrame!.gazeTarget,
           }
         : null;
     final memoryRes = sharedState['memory'] as Map<String, dynamic>?;

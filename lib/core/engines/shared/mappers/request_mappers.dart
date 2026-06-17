@@ -24,41 +24,16 @@ class RequestMappers {
   }
 
   static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon, String sessionId = 'wearer_001'}) {
-    final raw = contextOutput.raw;
-
-    // remap tracked_objects or scene_objects -> scene_objects with class_name as BE expects
-    final rawObjects = raw['scene_objects'] as List? ?? raw['tracked_objects'] as List? ?? [];
-    final sceneObjects = rawObjects.map((obj) {
-      if (obj is Map<String, dynamic>) {
-        return {
-          'object_id': obj['object_id'] ?? 0,
-          'class_name': obj['label'] ?? obj['class_name'] ?? '',
-          'bbox_xyxy': obj['bbox_xyxy'] ?? [],
-        };
-      }
-      return obj;
-    }).toList();
-
-    return {
-      'session_id': sessionId,
-      'timestamp_ms': DateTime.now().millisecondsSinceEpoch,
-      'meta': raw['meta'] ?? {
-        'frame_reliability': {'gaze_tracker_confidence': 0.95},
-        'telemetry': {'temperature_c': 38.5, 'is_throttled': false},
-      },
-      'gaze_grounding': raw['gaze_grounding'] ?? raw['attention_grounding'] ?? {},
-      'scene_objects': sceneObjects,
-      'interaction_primitives': raw['interaction_primitives'] ?? {
-        'pickup': {'active': false, 'object_id': 0, 'displacement_px': 0.0, 'class_name': ''},
-        'product_rotation': {'active': false, 'aspect_ratio_variance': 0.0},
-        'shelf_reach': {'active': false, 'arm_y': 0.0},
-        'product_comparison': {'active': false, 'compared_items': []},
-        'wrist_position': null,
-      },
-      'voice_nlu': raw['voice_nlu'] ?? {'rhino_active': false, 'active_intent': '', 'slots': {}},
-      'scene_understanding': raw['scene_understanding'] ?? {'label': contextOutput.sceneContext},
-      'activity_understanding': raw['activity_understanding'] ?? {'label': 'browsing'},
-    };
+    final raw = Map<String, dynamic>.from(contextOutput.raw);
+    
+    // The Context Engine now directly returns the exact schema expected by the Behavior Engine.
+    // We just ensure session_id is present and inject voice_nlu if available.
+    raw['session_id'] = sessionId;
+    if (!raw.containsKey('timestamp_ms')) {
+      raw['timestamp_ms'] = DateTime.now().millisecondsSinceEpoch;
+    }
+    
+    return raw;
   }
 
   static Map<String, dynamic> toInteractionRequest(BIEFrame bieFrame, {double? lat, double? lon, String? city, String? country}) {

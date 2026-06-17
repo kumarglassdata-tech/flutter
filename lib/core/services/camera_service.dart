@@ -32,8 +32,10 @@ class CameraTelemetry {
   });
 }
 
-class CameraService extends ChangeNotifier {
-  CameraService();
+class CameraService extends ChangeNotifier with WidgetsBindingObserver {
+  CameraService() {
+    WidgetsBinding.instance.addObserver(this);
+  }
 
   static const Duration _captureInterval = Duration(seconds: 3);
 
@@ -209,7 +211,28 @@ class CameraService extends ChangeNotifier {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_controller == null || !_controller!.value.isInitialized) {
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
+      // Free up memory when camera not active
+      stopStreaming();
+      _controller?.dispose();
+      _controller = null;
+      _isInitialized = false;
+      debugPrint('[CameraService] App went to background. Camera disposed.');
+    } else if (state == AppLifecycleState.resumed) {
+      // Reinitialize the camera with same properties
+      debugPrint('[CameraService] App resumed. Re-initializing camera...');
+      startStreaming();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     stopStreaming();
     _controller?.dispose();
     super.dispose();

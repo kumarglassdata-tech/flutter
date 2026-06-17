@@ -4,13 +4,11 @@ import 'package:image/image.dart' as img;
 
 import 'package:smartglass_flutter/core/models/unified_input.dart';
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
-import 'package:smartglass_flutter/core/services/audio_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
 import 'video_decoder_stub.dart'
     if (dart.library.html) 'video_decoder_web.dart';
 
 class VideoUploadSourceAdapter implements SourceAdapter {
-  final AudioService _audioService;
   final LocationService _locationService;
 
   final _videoController = StreamController<VideoFrame>.broadcast();
@@ -28,9 +26,8 @@ class VideoUploadSourceAdapter implements SourceAdapter {
   final _videoDecoder = VideoDecoder();
 
   VideoUploadSourceAdapter({
-    required AudioService audio,
     required LocationService location,
-  })  : _audioService = audio,
+  })  :
         _locationService = location;
 
   Uint8List? get uploadedBytes => _uploadedBytes;
@@ -76,10 +73,8 @@ class VideoUploadSourceAdapter implements SourceAdapter {
     _isActive = true;
 
     // Start local audio & location services so we get real-time device inputs
-    await _audioService.start();
     await _locationService.start();
 
-    _audioService.addListener(_onAudioChanged);
     _locationService.addListener(_onLocationChanged);
 
     if (!_isImage && _uploadedBytes != null) {
@@ -169,7 +164,6 @@ class VideoUploadSourceAdapter implements SourceAdapter {
   }
 
   void _onAudioChanged() {
-    _audioController.add(AudioChunk([_audioService.level]));
   }
 
   void _onLocationChanged() {
@@ -189,10 +183,8 @@ class VideoUploadSourceAdapter implements SourceAdapter {
     _healthTimer?.cancel();
     _healthTimer = null;
 
-    _audioService.removeListener(_onAudioChanged);
     _locationService.removeListener(_onLocationChanged);
 
-    await _audioService.stop();
     await _locationService.stop();
     _videoDecoder.dispose();
 

@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:smartglass_flutter/core/models/unified_input.dart';
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
-import 'package:smartglass_flutter/core/services/audio_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
 
 /// Adapter for Ray-Ban Meta Gen-2 Glasses.
@@ -12,7 +11,6 @@ import 'package:smartglass_flutter/core/services/location_service.dart';
 /// Flutter Layer -> MetaSdkService -> MethodChannel/EventChannel -> Android Native DAT SDK
 class MetaSourceAdapter implements SourceAdapter {
   final MetaGlassesSdkService _metaSdkService;
-  final AudioService _audioService;
   final LocationService _locationService;
 
   final _videoController = StreamController<VideoFrame>.broadcast();
@@ -27,10 +25,8 @@ class MetaSourceAdapter implements SourceAdapter {
 
   MetaSourceAdapter({
     required MetaGlassesSdkService metaSdk,
-    required AudioService audio,
     required LocationService location,
   })  : _metaSdkService = metaSdk,
-        _audioService = audio,
         _locationService = location;
 
   @override
@@ -82,13 +78,8 @@ class MetaSourceAdapter implements SourceAdapter {
         },
       );
 
-      // 3. Audio & GPS ingestion (fed from the SDK bridged sensor streams)
+      // Audio is managed natively by AudioStreamManager
       _audioSubscription?.cancel();
-      _audioSubscription = Stream.periodic(const Duration(milliseconds: 500), (_) => _audioService.level).listen(
-        (level) {
-          _audioController.add(AudioChunk([level]));
-        },
-      );
 
       // Listen to location changes
       _locationService.addListener(_onLocationChanged);

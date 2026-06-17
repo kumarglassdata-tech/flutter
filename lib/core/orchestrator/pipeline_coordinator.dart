@@ -58,6 +58,10 @@ class PipelineCoordinator {
     sharedState['engine_status'] = statuses;
     sharedState['input_lat'] = input.latitude ?? 0.0;
     sharedState['input_lon'] = input.longitude ?? 0.0;
+    
+    if (input.metadata.containsKey('voice_nlu')) {
+      sharedState['active_voice_nlu'] = input.metadata['voice_nlu'];
+    }
     final prefs = await SharedPreferences.getInstance();
     sharedState['session_id'] = prefs.getString('email') ?? 'wearer_001';
     final stopwatch = Stopwatch()..start();

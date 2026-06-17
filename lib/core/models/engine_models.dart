@@ -507,22 +507,7 @@ class EcomAdResponse {
   factory EcomAdResponse.mock() {
     final mockRaw = {
       "status": "success",
-      "suggestions": [
-        {
-          "id": "https://www.amazon.in/Lenovo-V15-Lifetime-Validity-Warranty/dp/B0CL7CMTXS",
-          "link": "https://www.amazon.in/Lenovo-V15-Lifetime-Validity-Warranty/dp/B0CL7CMTXS",
-          "name": "Lenovo V15 G4 AMD Athlon Laptop",
-          "price": 42999.00,
-          "image_url": "https://m.media-amazon.com/images/I/61AccNkmFFL._AC_UY218_.jpg"
-        },
-        {
-          "id": "https://www.flipkart.com/search?q=laptop",
-          "link": "https://www.flipkart.com/search?q=laptop",
-          "name": "Laptop - F-Assured Best Seller",
-          "price": 280.00,
-          "image_url": "https://upload.wikimedia.org/wikipedia/en/thumb/7/7a/Flipkart_logo.svg/100px-Flipkart_logo.svg.png"
-        }
-      ]
+      "suggestions": []
     };
     return EcomAdResponse.fromJson(mockRaw);
   }

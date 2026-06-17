@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:smartglass_flutter/core/models/unified_input.dart';
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
-import 'package:smartglass_flutter/core/services/audio_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
 
 class PhoneSourceAdapter implements SourceAdapter {
   final CameraService _cameraService;
-  final AudioService _audioService;
   final LocationService _locationService;
 
   final _videoController = StreamController<VideoFrame>.broadcast();
@@ -21,10 +19,8 @@ class PhoneSourceAdapter implements SourceAdapter {
 
   PhoneSourceAdapter({
     required CameraService camera,
-    required AudioService audio,
     required LocationService location,
   })  : _cameraService = camera,
-        _audioService = audio,
         _locationService = location;
 
   @override
@@ -49,12 +45,11 @@ class PhoneSourceAdapter implements SourceAdapter {
 
     // Start local services
     await _cameraService.startStreaming();
-    await _audioService.start();
+    // await _audioService.start(); // Disabled to allow AudioStreamManager to own the mic
     await _locationService.start();
 
     // Listeners
     _cameraService.addListener(_onCameraChanged);
-    _audioService.addListener(_onAudioChanged);
     _locationService.addListener(_onLocationChanged);
 
     _healthTimer?.cancel();
@@ -79,7 +74,6 @@ class PhoneSourceAdapter implements SourceAdapter {
   }
 
   void _onAudioChanged() {
-    _audioController.add(AudioChunk([_audioService.level]));
   }
 
   void _onLocationChanged() {
@@ -95,13 +89,11 @@ class PhoneSourceAdapter implements SourceAdapter {
   Future<void> stop() async {
     _isActive = false;
     _cameraService.removeListener(_onCameraChanged);
-    _audioService.removeListener(_onAudioChanged);
     _locationService.removeListener(_onLocationChanged);
     _healthTimer?.cancel();
     _healthTimer = null;
 
     await _cameraService.stopStreaming();
-    await _audioService.stop();
     await _locationService.stop();
 
     _healthController.add(const SourceHealth(

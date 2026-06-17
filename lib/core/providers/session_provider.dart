@@ -10,7 +10,6 @@ import 'package:wifi_scan/wifi_scan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
-import 'package:smartglass_flutter/core/services/audio_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
 
 // Import New Production Architecture
@@ -252,7 +251,6 @@ class SessionState {
 class SessionProvider extends ChangeNotifier {
   final CameraService _cameraService;
   final MetaGlassesSdkService _metaSdkService;
-  final AudioService _audioService;
   final LocationService _locationService;
 
   SessionState _state = const SessionState();
@@ -269,6 +267,7 @@ class SessionProvider extends ChangeNotifier {
   late final StreamCoordinator streamCoordinator;
   late final HealthMonitor healthMonitor;
   late final AudioStreamManager audioStreamManager;
+  InteractionClient? _interactionClient;
   final FlutterTts flutterTts = FlutterTts()
   ..setVolume(1.0)
   ..setSpeechRate(0.5)
@@ -283,15 +282,13 @@ class SessionProvider extends ChangeNotifier {
   SessionProvider(
     this._cameraService, {
     MetaGlassesSdkService? metaSdkService,
-    AudioService? audioService,
     LocationService? locationService,
   })  : _metaSdkService = metaSdkService ?? const MetaGlassesSdkService(),
-        _audioService = audioService ?? AudioService(),
         _locationService = locationService ?? LocationService() {
     _cameraService.addListener(_syncNewArchitecture);
     _loadSavedProducts();
-    _audioService.addListener(_syncNewArchitecture);
     _locationService.addListener(_syncNewArchitecture);
+    _locationService.addListener(_syncLocationWithInteractionEngine);
 
     _initNewArchitecture();
   }
@@ -311,7 +308,19 @@ class SessionProvider extends ChangeNotifier {
         }
       }
     } catch (e) {
+    } catch (e) {
       print('Failed to load saved products: $e');
+    }
+  }
+
+  void _syncLocationWithInteractionEngine() {
+    if (_interactionClient != null && _locationService.latitude != null && _locationService.longitude != null) {
+      _interactionClient!.setLocation(
+        _locationService.latitude!,
+        _locationService.longitude!,
+        _locationService.city ?? 'Unknown',
+        _locationService.country ?? 'Unknown',
+      );
     }
   }
 
@@ -330,17 +339,14 @@ class SessionProvider extends ChangeNotifier {
     final mockAdapter = MockSourceAdapter();
     final metaAdapter = MetaSourceAdapter(
       metaSdk: _metaSdkService,
-      audio: _audioService,
       location: _locationService,
     );
     final phoneAdapter = PhoneSourceAdapter(
       camera: _cameraService,
-      audio: _audioService,
       location: _locationService,
     );
     final laptopAdapter = LaptopSourceAdapter();
     _videoUploadAdapter = VideoUploadSourceAdapter(
-      audio: _audioService,
       location: _locationService,
     );
 
@@ -355,11 +361,27 @@ class SessionProvider extends ChangeNotifier {
     // 2. Initialize Clients & Telemetry
     telemetryService = TelemetryService();
 
-    final contextClient = ContextClient(fallbackToMock: false);
-    final behaviorClient = BehaviorClient(fallbackToMock: false);
-    final interactionClient = InteractionClient(fallbackToMock: false);
-    final ecomClient = EcomClient(fallbackToMock: false);
-    final memoryClient = MemoryClient(fallbackToMock: false);
+    final contextClient = ContextClient(
+      fallbackToMock: false,
+      onDiagnosticLog: telemetryService.addDiagnosticLog,
+    );
+    final behaviorClient = BehaviorClient(
+      fallbackToMock: false,
+      onDiagnosticLog: telemetryService.addDiagnosticLog,
+    );
+    final interactionClient = InteractionClient(
+      fallbackToMock: false,
+      onDiagnosticLog: telemetryService.addDiagnosticLog,
+    );
+    _interactionClient = interactionClient;
+    final ecomClient = EcomClient(
+      fallbackToMock: false,
+      onDiagnosticLog: telemetryService.addDiagnosticLog,
+    );
+    final memoryClient = MemoryClient(
+      fallbackToMock: false,
+      onDiagnosticLog: telemetryService.addDiagnosticLog,
+    );
 
     pipelineCoordinator = PipelineCoordinator(
       contextClient: contextClient,
@@ -757,7 +779,7 @@ class SessionProvider extends ChangeNotifier {
 
   Future<void> stopRuntime() async {
     _addLog('Stopping real-time stream coordinator...');
-    await _audioService.stop();
+    await _cameraService.stopStreaming();
     await audioStreamManager.stopVad();
     await audioStreamManager.disconnect();
     streamCoordinator.stop();
@@ -951,8 +973,8 @@ class SessionProvider extends ChangeNotifier {
       framesDropped: telemetry.droppedFrames,
       aiFramesSkipped: telemetry.droppedFrames,
       modelOutputs: {},
+      audioLevel: 0.0, // Interaction Engine manages audio directly now
       modelContext: _makeJsonEncodable(result),
-      audioLevel: _audioService.level,
       lastHealthMessage: health.message,
       lastContextOutput: contextOutput,
       lastBIEFrame: behaviorOutput,
@@ -1054,7 +1076,6 @@ class SessionProvider extends ChangeNotifier {
   void dispose() {
     _healthProbeTimer?.cancel();
     _cameraService.removeListener(_syncNewArchitecture);
-    _audioService.removeListener(_syncNewArchitecture);
     _locationService.removeListener(_syncNewArchitecture);
     sourceManager.removeListener(_syncNewArchitecture);
     streamCoordinator.removeListener(_syncNewArchitecture);

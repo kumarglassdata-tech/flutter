@@ -38,6 +38,10 @@ class BehaviourIntentStep extends PipelineStep<ContextEngineOutput, BIEFrame> {
       final lon = sharedState['input_lon'] as double? ?? 0.0;
       final sessionId = sharedState['session_id'] as String? ?? 'wearer_001';
       final requestPayload = RequestMappers.toBehaviorRequest(input, lat: lat, lon: lon, sessionId: sessionId);
+      final activeVoiceNlu = sharedState['active_voice_nlu'];
+      if (activeVoiceNlu != null) {
+        requestPayload['voice_nlu'] = activeVoiceNlu;
+      }
       final response = await _client.sendBehavior(requestPayload);
       final defaultGaze = input.topSalientObjects.firstOrNull;
       final output = BIEFrame.fromJson(response, defaultGazeTarget: defaultGaze);

@@ -12,11 +12,13 @@ class BehaviorClient {
   final String? baseUrl;
 
   final bool fallbackToMock;
+  final void Function(String source, String message, {String? jsonPayload, String? stackTrace, bool isError})? onDiagnosticLog;
 
   BehaviorClient({
     http.Client? client,
     RetryPolicy? retryPolicy,
     this.fallbackToMock = false,
+    this.onDiagnosticLog,
     this.baseUrl,
   })  : _client = client ?? http.Client(),
         _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
@@ -32,6 +34,12 @@ class BehaviorClient {
       while (true) {
         attempt++;
         try {
+          onDiagnosticLog?.call(
+            'BehaviorEngine',
+            'POST /api/v1/process Request',
+            jsonPayload: body,
+          );
+
           final response = await _client.post(
             url,
             headers: {'Content-Type': 'application/json'},
@@ -39,14 +47,29 @@ class BehaviorClient {
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            if (fallbackToMock) return _behaviorMock();
-            throw Exception('Behavior Engine HTTP ${response.statusCode}');
+            final errorMsg = 'Behavior Engine HTTP ${response.statusCode} - ${response.body}';
+            onDiagnosticLog?.call('BehaviorEngine', 'Error POST /api/v1/process', isError: true, stackTrace: errorMsg);
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('BehaviorEngine', 'Falling back to mock due to HTTP error');
+              return _behaviorMock();
+            }
+            throw Exception(errorMsg);
           }
 
-          return jsonDecode(response.body) as Map<String, dynamic>;
-        } catch (e) {
+          final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+          onDiagnosticLog?.call(
+            'BehaviorEngine',
+            'POST /api/v1/process Response',
+            jsonPayload: response.body,
+          );
+          return parsed;
+        } catch (e, st) {
           if (attempt > _retryPolicy.attempts) {
-            if (fallbackToMock) return _behaviorMock();
+            onDiagnosticLog?.call('BehaviorEngine', 'Max retries reached', isError: true, stackTrace: '$e\n$st');
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('BehaviorEngine', 'Falling back to mock due to exceptions');
+              return _behaviorMock();
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

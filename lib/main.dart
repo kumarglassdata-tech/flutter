@@ -9,9 +9,11 @@ import 'package:smartglass_flutter/core/theme/app_theme.dart';
 
 import 'dart:ui';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await WakelockPlus.enable();
 
   // Load persisted state before app starts
   final auth = AuthProvider();

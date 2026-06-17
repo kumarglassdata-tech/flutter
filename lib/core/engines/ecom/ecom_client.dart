@@ -11,11 +11,13 @@ class EcomClient {
   final RetryPolicy _retryPolicy;
 
   final bool fallbackToMock;
+  final void Function(String source, String message, {String? jsonPayload, String? stackTrace, bool isError})? onDiagnosticLog;
 
   EcomClient({
     http.Client? client,
     RetryPolicy? retryPolicy,
     this.fallbackToMock = false,
+    this.onDiagnosticLog,
   })  : _client = client ?? http.Client(),
         _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
         circuitBreaker = CircuitBreaker(name: 'EcomAddHandler');
@@ -32,6 +34,12 @@ class EcomClient {
       while (true) {
         attempt++;
         try {
+          onDiagnosticLog?.call(
+            'EcomClient',
+            'POST /${url.pathSegments.last} Request',
+            jsonPayload: body,
+          );
+
           final response = await _client.post(
             url,
             headers: {'Content-Type': 'application/json'},
@@ -39,25 +47,28 @@ class EcomClient {
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
+            final errorMsg = 'Ecom Engine HTTP ${response.statusCode} - ${response.body}';
+            onDiagnosticLog?.call('EcomClient', 'Error POST /${url.pathSegments.last}', isError: true, stackTrace: errorMsg);
             if (fallbackToMock) {
-              return {
-                "suggestions": [
-                  {"item_id": 1, "name": "Organic Milk", "price": 4.99}
-                ]
-              };
+              onDiagnosticLog?.call('EcomClient', 'Falling back to mock due to HTTP error');
+              return { "suggestions": [] };
             }
-            throw Exception('Ecom Engine server error: HTTP ${response.statusCode}');
+            throw Exception(errorMsg);
           }
 
-          return jsonDecode(response.body) as Map<String, dynamic>;
-        } catch (e) {
+          final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+          onDiagnosticLog?.call(
+            'EcomClient',
+            'POST /${url.pathSegments.last} Response',
+            jsonPayload: response.body,
+          );
+          return parsed;
+        } catch (e, st) {
           if (attempt > _retryPolicy.attempts) {
+            onDiagnosticLog?.call('EcomClient', 'Max retries reached', isError: true, stackTrace: '$e\n$st');
             if (fallbackToMock) {
-              return {
-                "suggestions": [
-                  {"item_id": 1, "name": "Organic Milk", "price": 4.99}
-                ]
-              };
+              onDiagnosticLog?.call('EcomClient', 'Falling back to mock due to exceptions');
+              return { "suggestions": [] };
             }
             rethrow;
           }

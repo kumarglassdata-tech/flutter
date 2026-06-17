@@ -14,11 +14,13 @@ class ContextClient {
   final String? baseUrl;
 
   final bool fallbackToMock;
+  final void Function(String source, String message, {String? jsonPayload, String? stackTrace, bool isError})? onDiagnosticLog;
 
   ContextClient({
     http.Client? client,
     RetryPolicy? retryPolicy,
     this.fallbackToMock = false,
+    this.onDiagnosticLog,
     this.baseUrl,
   })  : _client = client ?? http.Client(),
         _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
@@ -49,26 +51,37 @@ class ContextClient {
           }
 
           final base64Image = await compute(base64Encode, imageBytes);
-          final response = await _client.post(
-            url,
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'camera': {
-                'image_base64': base64Image,
-              },
-              'telemetry': {
+          final payload = jsonEncode({
+                'message': 'Flutter Stream',
+                'camera': {
+                  'image_base64': base64Image,
+                },
                 'gps': {
-                  'latitude': latitude,
-                  'longitude': longitude,
+                  'lat': latitude,
+                  'lon': longitude,
                 }
-              }
-            }),
-          ).timeout(const Duration(seconds: 8));
+              });
+
+          onDiagnosticLog?.call(
+            'ContextEngine',
+            'POST /inp Request',
+            jsonPayload: payload,
+          );
+
+            final response = await _client.post(
+              url,
+              headers: {'Content-Type': 'application/json'},
+              body: payload,
+            ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            debugPrint('CONTEXT ENGINE ERROR: ${response.statusCode} - ${response.body}');
-            if (fallbackToMock) return _mockResponse();
-            throw Exception('Context HTTP ${response.statusCode}');
+            final errorMsg = 'Context HTTP ${response.statusCode} - ${response.body}';
+            onDiagnosticLog?.call('ContextEngine', 'Error POST /inp', isError: true, stackTrace: errorMsg);
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('ContextEngine', 'Falling back to mock due to HTTP error');
+              return _mockResponse();
+            }
+            throw Exception(errorMsg);
           }
 
           // POST /inp only returns a success message. We must call GET /predict to get the actual boundaries.
@@ -76,21 +89,34 @@ class ContextClient {
           final predictRes = await _client.get(predictUrl).timeout(const Duration(seconds: 4));
           
           if (predictRes.statusCode < 200 || predictRes.statusCode >= 300) {
-             throw Exception('Predict HTTP ${predictRes.statusCode}');
+             final errorMsg = 'Predict HTTP ${predictRes.statusCode} - ${predictRes.body}';
+             onDiagnosticLog?.call('ContextEngine', 'Error GET /predict', isError: true, stackTrace: errorMsg);
+             throw Exception(errorMsg);
           }
 
           final parsed = jsonDecode(predictRes.body) as Map<String, dynamic>;
           
+          onDiagnosticLog?.call(
+            'ContextEngine',
+            'GET /predict Response',
+            jsonPayload: jsonEncode(parsed),
+          );
+          
           // If the real server is still somehow missing objects, fallback to mock
           if (!parsed.containsKey('scene_objects') && !parsed.containsKey('tracked_objects') && !parsed.containsKey('vision_response')) {
+            onDiagnosticLog?.call('ContextEngine', 'Missing expected keys in real response, merging with mock data');
             final mockData = _mockResponse();
             parsed.addAll(mockData);
           }
 
           return parsed;
-        } catch (e) {
+        } catch (e, st) {
           if (attempt > _retryPolicy.attempts) {
-            if (fallbackToMock) return _mockResponse();
+            onDiagnosticLog?.call('ContextEngine', 'Max retries reached', isError: true, stackTrace: '$e\n$st');
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('ContextEngine', 'Falling back to mock due to exceptions');
+              return _mockResponse();
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

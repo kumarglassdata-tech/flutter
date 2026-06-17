@@ -13,11 +13,13 @@ class MemoryClient {
   final String? baseUrl;
 
   final bool fallbackToMock;
+  final void Function(String source, String message, {String? jsonPayload, String? stackTrace, bool isError})? onDiagnosticLog;
 
   MemoryClient({
     http.Client? client,
     RetryPolicy? retryPolicy,
     this.fallbackToMock = false,
+    this.onDiagnosticLog,
     this.baseUrl,
   })  : _client = client ?? http.Client(),
         _retryPolicy = retryPolicy ?? RetryPolicy(attempts: 2),
@@ -44,12 +46,24 @@ class MemoryClient {
         filename: 'memory.txt'
       ));
       
+      onDiagnosticLog?.call(
+        'SafetyMemory',
+        'POST /memory Request',
+        jsonPayload: jsonEncode(payload),
+      );
       final streamedResponse = await _client.send(request).timeout(const Duration(seconds: 8));
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception('Memory store failed: HTTP ${response.statusCode}');
+        final errorMsg = 'Memory store failed: HTTP ${response.statusCode} - ${response.body}';
+        onDiagnosticLog?.call('SafetyMemory', 'Error POST /memory', isError: true, stackTrace: errorMsg);
+        throw Exception(errorMsg);
       }
+      onDiagnosticLog?.call(
+        'SafetyMemory',
+        'POST /memory Response',
+        jsonPayload: response.body,
+      );
       return jsonDecode(response.body) as Map<String, dynamic>;
     });
   }
@@ -66,20 +80,41 @@ class MemoryClient {
       while (true) {
         attempt++;
         try {
+          onDiagnosticLog?.call(
+            'SafetyMemory',
+            'GET /api/release Request',
+            jsonPayload: jsonEncode({'text': queryText}),
+          );
+
           final response = await _client.get(
             url,
             headers: {'Content-Type': 'application/json'},
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            if (fallbackToMock) return MemoryResponse.mock().raw;
-            throw Exception('Memory recall failed: HTTP ${response.statusCode}');
+            final errorMsg = 'Memory recall failed: HTTP ${response.statusCode} - ${response.body}';
+            onDiagnosticLog?.call('SafetyMemory', 'Error GET /api/release', isError: true, stackTrace: errorMsg);
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('SafetyMemory', 'Falling back to mock due to HTTP error');
+              return MemoryResponse.mock().raw;
+            }
+            throw Exception(errorMsg);
           }
 
-          return jsonDecode(response.body) as Map<String, dynamic>;
-        } catch (e) {
+          final parsed = jsonDecode(response.body) as Map<String, dynamic>;
+          onDiagnosticLog?.call(
+            'SafetyMemory',
+            'GET /api/release Response',
+            jsonPayload: response.body,
+          );
+          return parsed;
+        } catch (e, st) {
           if (attempt > _retryPolicy.attempts) {
-            if (fallbackToMock) return MemoryResponse.mock().raw;
+            onDiagnosticLog?.call('SafetyMemory', 'Max retries reached', isError: true, stackTrace: '$e\n$st');
+            if (fallbackToMock) {
+              onDiagnosticLog?.call('SafetyMemory', 'Falling back to mock due to exceptions');
+              return MemoryResponse.mock().raw;
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

@@ -19,14 +19,17 @@ class GateCheckStep extends PipelineStep<BIEFrame, bool> {
 
       GateDecision decision;
 
-      // DEMO OVERRIDE: Force the gate to ALWAYS be open so the AI responds continuously.
-      // Ignoring BE suppression and low salience scores to ensure constant interaction.
+      final isGateOpen = beGateOpen ?? (score >= 0.75);
+      final isEcomOpen = score >= 0.85;
+
       decision = GateDecision(
-        shouldInteract: true,
-        shouldRunEcom: score >= 0.85,
-        shouldPersistMemory: true,
+        shouldInteract: isGateOpen,
+        shouldRunEcom: isEcomOpen,
+        shouldPersistMemory: true, // Memory runs passively
         relevanceScore: score,
-        reason: 'FORCED OPEN FOR DEMO (Original BE Gate: $beGateOpen, Score: $score)',
+        reason: beGateOpen != null 
+          ? 'BE explicitly set gate_open=$beGateOpen. (Reason: ${suppressReason ?? 'none'})'
+          : 'Fallback threshold used. Score: $score (>=0.75 ? $isGateOpen)',
       );
 
       sharedState['gate_decision'] = decision;
