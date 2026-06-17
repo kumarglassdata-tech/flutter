@@ -34,8 +34,6 @@ class AudioStreamManager {
   bool _intentionalDisconnect = false;
   String? _currentUrl;
   Timer? _reconnectTimer;
-  
-  bool _waitingForMIISResponse = false;
 
   // PCM start lock
   Completer<void>? _startCompleter;
@@ -62,7 +60,7 @@ class AudioStreamManager {
       avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
       androidAudioAttributes: AndroidAudioAttributes(
         contentType: AndroidAudioContentType.speech,
-        usage: AndroidAudioUsage.voiceCommunication,
+        usage: AndroidAudioUsage.media,
         flags: AndroidAudioFlags.none,
       ),
       androidAudioFocusGainType: AndroidAudioFocusGainType.gainTransientMayDuck,
@@ -75,45 +73,6 @@ class AudioStreamManager {
   // ---------------------------------------------------------------------------
   // VAD — continuous hands-free listening
   // ---------------------------------------------------------------------------
-
-  Uint8List _buildWavHeader() {
-    final channels = 1;
-    final sampleRate = 16000;
-    final byteRate = sampleRate * channels * 2; // 16-bit = 2 bytes
-
-    final header = ByteData(44);
-    // 'RIFF'
-    header.setUint8(0, 82);
-    header.setUint8(1, 73);
-    header.setUint8(2, 70);
-    header.setUint8(3, 70);
-    header.setUint32(4, 0xFFFFFFFF, Endian.little); // chunk size
-    // 'WAVE'
-    header.setUint8(8, 87);
-    header.setUint8(9, 65);
-    header.setUint8(10, 86);
-    header.setUint8(11, 69);
-    // 'fmt '
-    header.setUint8(12, 102);
-    header.setUint8(13, 109);
-    header.setUint8(14, 116);
-    header.setUint8(15, 32);
-    header.setUint32(16, 16, Endian.little); // subchunk1 size
-    header.setUint16(20, 1, Endian.little); // audio format = PCM
-    header.setUint16(22, channels, Endian.little);
-    header.setUint32(24, sampleRate, Endian.little);
-    header.setUint32(28, byteRate, Endian.little);
-    header.setUint16(32, (channels * 2), Endian.little); // block align
-    header.setUint16(34, 16, Endian.little); // bits per sample
-    // 'data'
-    header.setUint8(36, 100);
-    header.setUint8(37, 97);
-    header.setUint8(38, 116);
-    header.setUint8(39, 97);
-    header.setUint32(40, 0xFFFFFFFF, Endian.little); // subchunk2 size
-
-    return header.buffer.asUint8List();
-  }
 
   Future<void> startVad() async {
     if (_vadActive) return;
@@ -154,16 +113,9 @@ class AudioStreamManager {
         _silenceTimer = null;
 
         if (!_isSpeaking) {
-          if (_waitingForMIISResponse) {
-            // Drop incoming speech triggers if we are waiting for ASR
-            return;
-          }
           _isSpeaking = true;
           debugPrint('[VAD] Speech started (rms=${rms.toStringAsFixed(4)})');
           _safeSinkAdd(jsonEncode({'type': 'start_of_speech'}));
-          
-          // Inject WAV header before first PCM chunk to ensure backend ASR parses it properly
-          _safeSinkAdd(_buildWavHeader());
         }
         // Stream chunk to server while speaking
         _safeSinkAdd(chunk);
@@ -174,13 +126,8 @@ class AudioStreamManager {
           _silenceTimer ??= Timer(_kSilenceTimeout, () {
             if (_isSpeaking) {
               _isSpeaking = false;
-              if (!_waitingForMIISResponse) {
-                debugPrint('[VAD] Speech ended (silence timeout) - Sending end_of_speech');
-                _waitingForMIISResponse = true;
-                _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
-              } else {
-                debugPrint('[VAD] Speech ended but VAD locked (waiting for MIIS)');
-              }
+              debugPrint('[VAD] Speech ended (silence timeout)');
+              _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
             }
             _silenceTimer = null;
           });
@@ -266,19 +213,9 @@ class AudioStreamManager {
     _currentUrl = url;
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
-      
-      // The backend requires an initial location context
-      _safeSinkAdd(jsonEncode({
-        "type": "set_location",
-        "latitude": 17.3850,
-        "longitude": 78.4867,
-        "city": "Hyderabad"
-      }));
-
       _channel!.stream.listen(
         (message) async {
           if (message is List<int> || message is Uint8List) {
-            debugPrint('[AudioStreamManager] WS binary message received (${message.length} bytes)');
             // Wait for any in-progress stop to clear before starting playback
             while (_isStopping) {
               await Future.delayed(const Duration(milliseconds: 5));
@@ -300,7 +237,6 @@ class AudioStreamManager {
           } else if (message is String) {
             try {
               final data = jsonDecode(message) as Map<String, dynamic>;
-              debugPrint('[AudioStreamManager] WS string: ${message.length > 200 ? message.substring(0, 200) + '...' : message}');
               switch (data['type'] as String?) {
                 case 'audio_start':
                   await _startStream();
@@ -312,7 +248,6 @@ class AudioStreamManager {
                   _transcriptController.add(data['text'] as String? ?? '');
                   break;
                 case 'status':
-                  _waitingForMIISResponse = false;
                   _statusController.add(data);
                   break;
               }
@@ -321,14 +256,12 @@ class AudioStreamManager {
             }
           }
         },
-        onError: (error) {
-          debugPrint('[AudioStreamManager] WebSocket error: $error');
-          _isPlaying = false;
+        onError: (err) {
+          debugPrint('[AudioStreamManager] WS error: $err');
           _scheduleReconnect();
         },
         onDone: () {
-          debugPrint('[AudioStreamManager] WebSocket connection closed by server');
-          _isPlaying = false;
+          debugPrint('[AudioStreamManager] WS closed.');
           _scheduleReconnect();
         },
       );
