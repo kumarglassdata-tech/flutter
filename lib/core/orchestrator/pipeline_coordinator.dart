@@ -135,10 +135,16 @@ class PipelineCoordinator {
     print('[STEP 2] BehaviorEngine (Latency: ${behaviorLatency}ms, Mock: $behaviorIsMock)');
     print('  - Request:');
     try {
-      final reqPayload = RequestMappers.toBehaviorRequest(contextRes.output!, lat: lat, lon: lon, sessionId: sharedState['session_id'] as String? ?? 'wearer_001');
+      final reqPayload = RequestMappers.toBehaviorRequest(
+        contextRes.output!,
+        lat: lat,
+        lon: lon,
+        sessionId: sharedState['session_id'] as String? ?? 'wearer_001',
+        voiceNlu: input.voiceNlu,
+      );
       print('    ${jsonEncode(reqPayload)}');
     } catch (_) {
-      print('    <Failed to map request payload>');
+      print('    (unable to encode request payload)');
     }
     if (behaviorRes.isSuccess) {
       print('  - Response payload:');

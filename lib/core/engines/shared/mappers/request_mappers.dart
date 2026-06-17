@@ -23,7 +23,7 @@ class RequestMappers {
     };
   }
 
-  static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon, String sessionId = 'wearer_001'}) {
+  static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon, String sessionId = 'wearer_001', Map<String, dynamic>? voiceNlu}) {
     final raw = contextOutput.raw;
 
     // remap tracked_objects or scene_objects -> scene_objects with class_name as BE expects
@@ -55,7 +55,7 @@ class RequestMappers {
         'product_comparison': {'active': false, 'compared_items': []},
         'wrist_position': null,
       },
-      'voice_nlu': raw['voice_nlu'] ?? {'rhino_active': false, 'active_intent': '', 'slots': {}},
+      if (voiceNlu != null) 'voice_nlu': voiceNlu,
       'scene_understanding': raw['scene_understanding'] ?? {'label': contextOutput.sceneContext},
       'activity_understanding': raw['activity_understanding'] ?? {'label': 'browsing'},
     };

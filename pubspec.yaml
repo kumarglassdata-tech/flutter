@@ -1,7 +1,7 @@
 name: smartglass_flutter
 description: Smart Myna AI EcommercePlatform - Android, iOS & Web
 publish_to: "none"
-version: 1.0.0+1
+version: 1.0.0+2002
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -54,7 +54,7 @@ dependencies:
   url_launcher: ^6.3.2
   video_thumbnail: ^0.5.6
   record: ^7.0.0
-  flutter_tts: ^3.8.3
+  flutter_tts: 3.8.5
   web_socket_channel: ^3.0.0
   geocoding: ^4.0.0
   audio_session: ^0.2.3

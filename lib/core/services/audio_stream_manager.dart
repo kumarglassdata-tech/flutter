@@ -10,8 +10,8 @@ import 'package:audio_session/audio_session.dart';
 
 // RMS amplitude threshold — tune for smart glasses mic sensitivity
 // 0.01 = very sensitive, 0.05 = moderate, 0.10 = only loud speech
-const double _kSpeechThreshold = 0.02;
-const Duration _kSilenceTimeout = Duration(milliseconds: 800);
+const double _kSpeechThreshold = 0.008;
+const Duration _kSilenceTimeout = Duration(milliseconds: 1000);
 
 class AudioStreamManager {
   WebSocketChannel? _channel;
@@ -24,6 +24,7 @@ class AudioStreamManager {
   bool _vadActive = false;
   bool _isSpeaking = false;
   Timer? _silenceTimer;
+  bool _waitingForMIISResponse = false;
 
   // Playback queue
   final List<Uint8List> _audioQueue = [];
@@ -46,6 +47,9 @@ class AudioStreamManager {
 
   bool get isVadActive => _vadActive;
   bool get isRecording => _micSubscription != null;
+
+  int _bufferedBytes = 0;
+  bool _playbackStarted = false;
 
   // ---------------------------------------------------------------------------
   // Init
@@ -85,18 +89,20 @@ class AudioStreamManager {
 
     // Ensure any stuck native recording session is killed before starting a new one
     try {
-      if (await _audioRecorder.isRecording()) {
-        await _audioRecorder.stop();
+      if (await _audioRecorder.isRecording().timeout(const Duration(seconds: 1))) {
+        await _audioRecorder.stop().timeout(const Duration(seconds: 1));
       }
     } catch (e) {
       debugPrint('[AudioStreamManager] Non-fatal error stopping previous recorder: $e');
     }
 
+    debugPrint('[AudioStreamManager] Calling startStream...');
     final stream = await _audioRecorder.startStream(const RecordConfig(
       encoder: AudioEncoder.pcm16bits,
       sampleRate: 16000,
       numChannels: 1,
-    ));
+    )).timeout(const Duration(seconds: 3));
+    debugPrint('[AudioStreamManager] startStream returned successfully.');
 
     _micSubscription = stream.listen((Uint8List chunk) {
       if (!_vadActive) return;
@@ -112,20 +118,23 @@ class AudioStreamManager {
         _silenceTimer?.cancel();
         _silenceTimer = null;
 
-        if (!_isSpeaking) {
+        if (!_isSpeaking && !_waitingForMIISResponse) {
           _isSpeaking = true;
           debugPrint('[VAD] Speech started (rms=${rms.toStringAsFixed(4)})');
           _safeSinkAdd(jsonEncode({'type': 'start_of_speech'}));
         }
         // Stream chunk to server while speaking
-        _safeSinkAdd(chunk);
+        if (_isSpeaking && !_waitingForMIISResponse) {
+          _safeSinkAdd(chunk);
+        }
       } else {
         // Keep streaming during natural brief pauses so the server gets context
-        if (_isSpeaking) {
+        if (_isSpeaking && !_waitingForMIISResponse) {
           _safeSinkAdd(chunk);
           _silenceTimer ??= Timer(_kSilenceTimeout, () {
             if (_isSpeaking) {
               _isSpeaking = false;
+              _waitingForMIISResponse = true;
               debugPrint('[VAD] Speech ended (silence timeout)');
               _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
             }
@@ -138,13 +147,13 @@ class AudioStreamManager {
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(seconds: 1), startVad);
+      if (!_intentionalDisconnect) Future.delayed(const Duration(seconds: 1), startVad);
     }, onDone: () {
-      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly. Restarting...');
+      debugPrint('[AudioStreamManager] Mic stream closed.');
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(seconds: 1), startVad);
+      if (!_intentionalDisconnect) Future.delayed(const Duration(seconds: 1), startVad);
     });
   }
 
@@ -209,10 +218,18 @@ class AudioStreamManager {
   // ---------------------------------------------------------------------------
 
   void connect(String url) {
+    if (_channel != null) return;
+    
     _intentionalDisconnect = false;
     _currentUrl = url;
     try {
       _channel = WebSocketChannel.connect(Uri.parse(url));
+      _safeSinkAdd(jsonEncode({
+        "type": "set_location",
+        "latitude": 17.3850,
+        "longitude": 78.4867,
+        "city": "Hyderabad"
+      }));
       _channel!.stream.listen(
         (message) async {
           if (message is List<int> || message is Uint8List) {
@@ -242,12 +259,17 @@ class AudioStreamManager {
                   await _startStream();
                   break;
                 case 'audio_end':
+                  if (!_playbackStarted && _audioQueue.isNotEmpty) {
+                    _playbackStarted = true;
+                    _processAudioQueue();
+                  }
                   await _stopStream();
                   break;
                 case 'transcript':
                   _transcriptController.add(data['text'] as String? ?? '');
                   break;
                 case 'status':
+                  _waitingForMIISResponse = false;
                   _statusController.add(data);
                   break;
               }
@@ -312,7 +334,15 @@ class AudioStreamManager {
   void _enqueueAudio(Uint8List chunk) {
     if (_isStopping || !_isPlaying) return;
     _audioQueue.add(chunk);
-    _processAudioQueue();
+    _bufferedBytes += chunk.length;
+
+    // Start playing if we have > 24000 bytes (0.5s) or if it's the end of speech
+    if (!_playbackStarted && _bufferedBytes > 24000) {
+      _playbackStarted = true;
+      _processAudioQueue();
+    } else if (_playbackStarted) {
+      _processAudioQueue();
+    }
   }
 
   Future<void> _processAudioQueue() async {
@@ -322,7 +352,7 @@ class AudioStreamManager {
       while (_audioQueue.isNotEmpty && _isPlaying) {
         final chunk = _audioQueue.removeAt(0);
         for (int i = 0; i < chunk.length; i += 4096) {
-          if (!_isPlaying) break;
+          if (!_isPlaying && _isStopping) break;
           final end = (i + 4096).clamp(0, chunk.length);
           try {
             await FlutterPcmSound.feed(
@@ -340,19 +370,20 @@ class AudioStreamManager {
 
   Future<void> _startStream() async {
     if (_isPlaying) return;
-    if (_startCompleter != null) {
-      await _startCompleter!.future;
-      return;
-    }
-    _startCompleter = Completer<void>();
     try {
       _isPlaying = true;
+      _isStopping = false;
+      _bufferedBytes = 0;
+      _playbackStarted = false;
+      _audioQueue.clear();
       FlutterPcmSound.start();
     } catch (e) {
       _isPlaying = false;
       debugPrint('[AudioStreamManager] Failed to start PCM stream: $e');
     } finally {
-      if (!_startCompleter!.isCompleted) _startCompleter!.complete();
+      if (_startCompleter != null && !_startCompleter!.isCompleted) {
+        _startCompleter!.complete();
+      }
       _startCompleter = null;
     }
   }
@@ -360,13 +391,20 @@ class AudioStreamManager {
   Future<void> _stopStream() async {
     if (!_isPlaying || _isStopping) return;
     _isStopping = true;
-    _isPlaying = false;
-    _audioQueue.clear();
+    
+    // Wait until the queue is fully processed
     while (_isProcessingQueue) {
       await Future.delayed(const Duration(milliseconds: 10));
     }
+    
+    // Wait for the native buffer to finish playing (max ~500ms).
+    await Future.delayed(const Duration(milliseconds: 500));
+    
+    _isPlaying = false;
+    _audioQueue.clear();
     try {
-      await FlutterPcmSound.stop().timeout(const Duration(milliseconds: 500));
+      await FlutterPcmSound.release();
+      await FlutterPcmSound.setup(sampleRate: 24000, channelCount: 1);
     } catch (e) {
       debugPrint('[AudioStreamManager] Failed to stop PCM stream: $e');
     }
@@ -380,11 +418,24 @@ class AudioStreamManager {
   Future<void> disconnect() async {
     _intentionalDisconnect = true;
     _reconnectTimer?.cancel();
-    await _channel?.sink.close();
-    _channel = null;
+    
+    // Stop all recording streams
+    await stopVad();
+    await _audioRecorder.stop();
     await _micSubscription?.cancel();
     _micSubscription = null;
+    
+    final oldChannel = _channel;
+    _channel = null;
     _isPlaying = false;
+    
+    try {
+      if (oldChannel != null) {
+        await oldChannel.sink.close().timeout(const Duration(seconds: 1));
+      }
+    } catch (e) {
+      debugPrint('[AudioStreamManager] Failed closing channel: $e');
+    }
   }
 
   Future<void> dispose() async {

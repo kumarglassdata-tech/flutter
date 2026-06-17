@@ -40,6 +40,7 @@ class UnifiedInput {
   final InputSource source;
   final DateTime timestamp;
   final Map<String, dynamic> metadata;
+  final Map<String, dynamic>? voiceNlu;
 
   const UnifiedInput({
     this.imageBytes,
@@ -49,5 +50,6 @@ class UnifiedInput {
     required this.source,
     required this.timestamp,
     this.metadata = const {},
+    this.voiceNlu,
   });
 }

@@ -11,6 +11,7 @@ class StreamCoordinator extends ChangeNotifier {
   final SourceManager _sourceManager;
   final PipelineCoordinator _pipelineCoordinator;
   final TelemetryService _telemetryService;
+  final Map<String, dynamic>? Function()? getVoiceNlu;
 
   StreamSubscription<VideoFrame>? _videoSub;
   StreamSubscription<AudioChunk>? _audioSub;
@@ -30,6 +31,7 @@ class StreamCoordinator extends ChangeNotifier {
     required SourceManager sourceManager,
     required PipelineCoordinator pipelineCoordinator,
     required TelemetryService telemetryService,
+    this.getVoiceNlu,
   })  : _sourceManager = sourceManager,
         _pipelineCoordinator = pipelineCoordinator,
         _telemetryService = telemetryService;
@@ -106,6 +108,7 @@ class StreamCoordinator extends ChangeNotifier {
           : (_sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK),
       timestamp: DateTime.now(),
       metadata: metadata ?? const {},
+      voiceNlu: getVoiceNlu?.call(),
     );
 
     try {

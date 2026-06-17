@@ -261,6 +261,8 @@ class SessionProvider extends ChangeNotifier {
   bool _isStartingRuntime = false;
   late final VideoUploadSourceAdapter _videoUploadAdapter;
   Timer? _healthProbeTimer;
+  Map<String, dynamic>? _activeVoiceNlu;
+  Timer? _voiceNluTimer;
 
   // New Architecture Entities
   late final SourceManager sourceManager;
@@ -374,6 +376,7 @@ class SessionProvider extends ChangeNotifier {
       sourceManager: sourceManager,
       pipelineCoordinator: pipelineCoordinator,
       telemetryService: telemetryService,
+      getVoiceNlu: () => _activeVoiceNlu,
     );
 
     healthMonitor = HealthMonitor(
@@ -448,6 +451,19 @@ class SessionProvider extends ChangeNotifier {
       if (bcpJson.isNotEmpty) {
         final audioBieFrame = BIEFrame.fromJson(bcpJson);
         _state = _state.copyWith(lastBIEFrame: audioBieFrame);
+
+        // ✅ KEY ADDITION: Extract voice_nlu and hold for 15s TTL
+        final voiceNlu = bcpJson['voice_nlu'] as Map<String, dynamic>?;
+        if (voiceNlu != null && voiceNlu['rhino_active'] == true) {
+          _activeVoiceNlu = voiceNlu;
+          _voiceNluTimer?.cancel();
+          _voiceNluTimer = Timer(const Duration(seconds: 15), () {
+            _activeVoiceNlu = null;
+          });
+        } else {
+          _activeVoiceNlu = null;
+          _voiceNluTimer?.cancel();
+        }
         
         if (audioBieFrame.salienceScore >= 0.5) {
           _addLog('Audio intent triggered Ecom. Salience: ${audioBieFrame.salienceScore}');
@@ -743,6 +759,10 @@ class SessionProvider extends ChangeNotifier {
 
       healthMonitor.resetAllCircuits();
       streamCoordinator.start();
+      
+      // Ensure WebSocket is connected before starting VAD
+      audioStreamManager.connect(EnvConfig.interactionWsUrl);
+      
       await audioStreamManager.startVad();
       _addLog('Real-time ingestion pipeline running. VAD listening.');
 
