@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:smartglass_flutter/core/orchestrator/steps/context_engine_step.dart';
 import 'package:smartglass_flutter/core/orchestrator/steps/behaviour_intent_step.dart';
@@ -17,6 +18,8 @@ import 'package:smartglass_flutter/core/engines/memory/memory_client.dart';
 import 'package:smartglass_flutter/core/engines/shared/mappers/request_mappers.dart';
 import 'package:smartglass_flutter/core/models/unified_input.dart';
 import 'package:smartglass_flutter/core/models/engine_status.dart';
+import 'package:smartglass_flutter/core/models/engine_models.dart';
+import 'package:smartglass_flutter/core/orchestrator/pipeline_step.dart';
 import 'package:smartglass_flutter/core/diagnostics/telemetry_service.dart';
 
 class PipelineCoordinator {
@@ -53,23 +56,25 @@ class PipelineCoordinator {
     final sharedState = <String, dynamic>{};
     final statuses = <String, EngineStatus>{};
     sharedState['engine_status'] = statuses;
-    sharedState['input_lat'] = input.location?.latitude ?? 0.0;
-    sharedState['input_lon'] = input.location?.longitude ?? 0.0;
+    sharedState['input_lat'] = input.latitude ?? 0.0;
+    sharedState['input_lon'] = input.longitude ?? 0.0;
+    final prefs = await SharedPreferences.getInstance();
+    sharedState['session_id'] = prefs.getString('email') ?? 'wearer_001';
     final stopwatch = Stopwatch()..start();
 
     final timestamp = input.timestamp;
     final source = input.source.name;
-    final imgLen = input.videoFrame?.bytes.length ?? 0;
-    final lat = input.location?.latitude ?? 0.0;
-    final lon = input.location?.longitude ?? 0.0;
-    final audioLevel = input.audioChunk?.samples.firstOrNull ?? 0.0;
+    final imgLen = input.imageBytes?.length ?? 0;
+    final lat = input.latitude ?? 0.0;
+    final lon = input.longitude ?? 0.0;
+    final audioLevel = 0.0; // Input audioLevel removed for now
 
     print('============================================================');
     print('[PIPELINE RUN] STARTING PIPELINE');
     print('  - Timestamp: $timestamp');
     print('  - Source: $source');
     print('  - Input details:');
-    print('    * Image frame: $imgLen bytes (${input.videoFrame?.width ?? 0}x${input.videoFrame?.height ?? 0})');
+    print('    * Image frame: $imgLen bytes');
     print('    * GPS Location: Latitude $lat, Longitude $lon');
     print('    * Audio first sample: $audioLevel');
     print('------------------------------------------------------------');
@@ -121,7 +126,7 @@ class PipelineCoordinator {
 
     // 2. Run Behavior Step
     final behaviorStart = stopwatch.elapsedMilliseconds;
-    final behaviorRes = await behaviorStep.execute(contextRes.output!, sharedState);
+    final PipelineResult<BIEFrame> behaviorRes = await behaviorStep.execute(contextRes.output!, sharedState);
     final behaviorLatency = stopwatch.elapsedMilliseconds - behaviorStart;
     _telemetryService.recordLatency('BehaviorEngine', behaviorLatency);
 
@@ -130,10 +135,16 @@ class PipelineCoordinator {
     print('[STEP 2] BehaviorEngine (Latency: ${behaviorLatency}ms, Mock: $behaviorIsMock)');
     print('  - Request:');
     try {
-      final reqPayload = RequestMappers.toBehaviorRequest(contextRes.output!, lat: lat, lon: lon);
+      final reqPayload = RequestMappers.toBehaviorRequest(
+        contextRes.output!,
+        lat: lat,
+        lon: lon,
+        sessionId: sharedState['session_id'] as String? ?? 'wearer_001',
+        voiceNlu: input.voiceNlu,
+      );
       print('    ${jsonEncode(reqPayload)}');
     } catch (_) {
-      print('    <Failed to map request payload>');
+      print('    (unable to encode request payload)');
     }
     if (behaviorRes.isSuccess) {
       print('  - Response payload:');
@@ -264,18 +275,50 @@ class PipelineCoordinator {
 
     sharedState['pipeline.status'] = 'ACTIVE';
 
-    // 4. Run Interaction Subsystem Step
-    final interactionStart = stopwatch.elapsedMilliseconds;
-    final interactionRes = await interactionStep.execute(behaviorRes.output!, sharedState);
-    final interactionLatency = stopwatch.elapsedMilliseconds - interactionStart;
-    _telemetryService.recordLatency('InteractionSubsystem', interactionLatency);
+    print('[PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...');
 
+    final results = await Future.wait([
+      () async {
+        final start = stopwatch.elapsedMilliseconds;
+        final res = await interactionStep.execute(behaviorRes.output!, sharedState);
+        final latency = stopwatch.elapsedMilliseconds - start;
+        _telemetryService.recordLatency('InteractionSubsystem', latency);
+        return {'res': res, 'latency': latency};
+      }(),
+      () async {
+        final start = stopwatch.elapsedMilliseconds;
+        final res = await ecomStep.execute(behaviorRes.output!, sharedState);
+        final latency = stopwatch.elapsedMilliseconds - start;
+        _telemetryService.recordLatency('EcomAddHandler', latency);
+        return {'res': res, 'latency': latency};
+      }(),
+      () async {
+        final start = stopwatch.elapsedMilliseconds;
+        final res = await memoryStep.execute(behaviorRes.output!, sharedState);
+        final latency = stopwatch.elapsedMilliseconds - start;
+        _telemetryService.recordLatency('SafetyMemory', latency);
+        return {'res': res, 'latency': latency};
+      }()
+    ]);
+
+    final interactionRes = results[0]['res'] as dynamic;
+    final interactionLatency = results[0]['latency'] as int;
+    
+    final ecomRes = results[1]['res'] as dynamic;
+    final ecomLatency = results[1]['latency'] as int;
+    
+    final memoryRes = results[2]['res'] as dynamic;
+    final memoryLatency = results[2]['latency'] as int;
+
+    // ------------------------------------------------------------------------
+    // 4. Interaction Logging & Status
+    // ------------------------------------------------------------------------
     final interactionRawOutput = sharedState['interaction'];
     final interactionIsMock = sharedState['interaction_is_mock'] ?? false;
     print('[STEP 4] InteractionSubsystem (Latency: ${interactionLatency}ms, Mock: $interactionIsMock)');
     print('  - Request:');
     try {
-      final reqPayload = RequestMappers.toInteractionRequest(behaviorRes.output!);
+      final reqPayload = RequestMappers.toInteractionRequest(behaviorRes.output!, lat: lat, lon: lon);
       print('    ${jsonEncode(reqPayload)}');
     } catch (_) {
       print('    <Failed to map request payload>');
@@ -313,12 +356,9 @@ class PipelineCoordinator {
       );
     }
 
-    // 5. Run Ecom Ad Step
-    final ecomStart = stopwatch.elapsedMilliseconds;
-    final ecomRes = await ecomStep.execute(behaviorRes.output!, sharedState);
-    final ecomLatency = stopwatch.elapsedMilliseconds - ecomStart;
-    _telemetryService.recordLatency('EcomAddHandler', ecomLatency);
-
+    // ------------------------------------------------------------------------
+    // 5. Ecom Ad Step Logging & Status
+    // ------------------------------------------------------------------------
     final ecomRawOutput = sharedState['ecom'];
     final ecomIsMock = sharedState['ecom_is_mock'] ?? false;
     print('[STEP 5] EcomAddHandler (Latency: ${ecomLatency}ms, Mock: $ecomIsMock)');
@@ -362,12 +402,9 @@ class PipelineCoordinator {
       );
     }
 
-    // 6. Run Safety Memory Step
-    final memoryStart = stopwatch.elapsedMilliseconds;
-    final memoryRes = await memoryStep.execute(behaviorRes.output!, sharedState);
-    final memoryLatency = stopwatch.elapsedMilliseconds - memoryStart;
-    _telemetryService.recordLatency('SafetyMemory', memoryLatency);
-
+    // ------------------------------------------------------------------------
+    // 6. Safety Memory Step Logging & Status
+    // ------------------------------------------------------------------------
     final memoryRawOutput = sharedState['memory'];
     final memoryIsMock = sharedState['memory_is_mock'] ?? false;
     print('[STEP 6] SafetyMemory (Latency: ${memoryLatency}ms, Mock: $memoryIsMock)');
@@ -410,7 +447,7 @@ class PipelineCoordinator {
     }
 
     stopwatch.stop();
-    print('[PIPELINE RUN] COMPLETED SUCCESSFULLY');
+    print('[PIPELINE RUN] COMPLETED SUCCESSFULLY IN PARALLEL');
     print('  - Total Time: ${stopwatch.elapsedMilliseconds}ms');
     print('============================================================');
     return sharedState;

@@ -1,7 +1,7 @@
 name: smartglass_flutter
 description: Smart Myna AI EcommercePlatform - Android, iOS & Web
 publish_to: "none"
-version: 1.0.0+1
+version: 1.0.0+2002
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -54,8 +54,12 @@ dependencies:
   url_launcher: ^6.3.2
   video_thumbnail: ^0.5.6
   record: ^7.0.0
-  flutter_tts: ^3.8.3
-
+  flutter_tts: 3.8.5
+  web_socket_channel: ^3.0.0
+  geocoding: ^4.0.0
+  audio_session: ^0.2.3
+  flutter_pcm_sound: ^3.3.3
+  flutter_dotenv: ^6.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -66,31 +70,32 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/smart_myna_logo.png
+  image_path: assets/images/smart_myna_logo.jpg
   min_sdk_android: 21
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: assets/images/smart_myna_logo.png
-    background_color: "#109E95"
-    theme_color: "#109E95"
+    image_path: assets/images/smart_myna_logo.jpg
+    background_color: "#282D20"
+    theme_color: "#282D20"
   windows:
     generate: false
   macos:
     generate: false
 
 flutter_native_splash:
-  color: "#109E95"
-  image: assets/images/smart_myna_logo.png
+  color: "#282D20"
+  image: assets/images/smart_myna_logo.jpg
   android: true
   ios: true
   web: true
   android_12:
-    color: "#109E95"
-    image: assets/images/smart_myna_logo.png
+    color: "#282D20"
+    image: assets/images/smart_myna_logo.jpg
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/
     - assets/models/
+    - .env

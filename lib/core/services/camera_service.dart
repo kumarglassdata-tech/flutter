@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 class CameraTelemetry {
   final bool isInitialized;
@@ -50,6 +51,8 @@ class CameraService extends ChangeNotifier {
   String? _lastFramePath;
   Uint8List? _lastFrameBytes;
   String? _errorMessage;
+  Size? _captureResolution;
+  Size? get captureResolution => _captureResolution;
 
   CameraController? get controller => _controller;
   bool get isInitialized => _isInitialized;
@@ -96,7 +99,7 @@ class CameraService extends ChangeNotifier {
 
       _controller = CameraController(
         selectedCamera,
-        ResolutionPreset.high,
+        ResolutionPreset.low,
         enableAudio: false,
         imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg,
       );
@@ -110,6 +113,8 @@ class CameraService extends ChangeNotifier {
     }
   }
 
+  Timer? _captureTimer;
+
   Future<void> startStreaming() async {
     await initialize(preferredLens: _preferredLens);
     if (_controller == null || !_controller!.value.isInitialized) {
@@ -118,27 +123,75 @@ class CameraService extends ChangeNotifier {
 
     _streamStartedAt ??= DateTime.now();
     _isStreaming = true;
-    _timer?.cancel();
-    _timer = Timer.periodic(_captureInterval, (_) {
-      _captureFrame();
-    });
+    _errorMessage = null;
     notifyListeners();
-    await _captureFrame();
+
+    // Take a picture every 2 seconds to avoid overloading the HAL
+    _captureTimer = Timer.periodic(const Duration(milliseconds: 2000), _captureFrame);
   }
 
+  Future<void> _captureFrame(Timer timer) async {
+    if (!_isStreaming || _controller == null || !_controller!.value.isInitialized) {
+      return;
+    }
+    if (_captureInFlight) return; // STRICT CONCURRENCY LOCK
+
+    _captureInFlight = true;
+    final startedAt = DateTime.now();
+    
+    try {
+      final picture = await _controller!.takePicture();
+      final bytes = await picture.readAsBytes();
+
+      _lastFrameBytes = bytes;
+      _lastFramePath = picture.path;
+
+      // Ensure we have a resolution recorded
+      // We can't get it directly from picture object easily here without decoding, 
+      // but backend handles JPEG decoding.
+
+      _framesCaptured += 1;
+      _analysisCount += 1;
+      _lastAnalysisLatencyMs = DateTime.now().difference(startedAt).inMilliseconds.toDouble();
+      _errorMessage = null;
+
+      // Delete the file immediately to avoid mFd leaks!
+      try {
+        await File(picture.path).delete();
+      } catch (_) {}
+    } catch (error) {
+      _framesDropped += 1;
+      _errorMessage = 'Frame capture failed: $error';
+    } finally {
+      _captureInFlight = false;
+      notifyListeners();
+    }
+  }
+
+
+
   Future<void> stopStreaming() async {
-    _timer?.cancel();
-    _timer = null;
     _isStreaming = false;
+    _captureTimer?.cancel();
+    _captureTimer = null;
+    if (_controller != null && _controller!.value.isStreamingImages) {
+      await _controller!.stopImageStream();
+    }
     notifyListeners();
   }
 
   Future<void> toggleCameraLens() async {
     final wasStreaming = _isStreaming;
-    _timer?.cancel();
-    _timer = null;
-    _isStreaming = false;
+    await stopStreaming();
     _streamStartedAt = null;
+
+    // WAIT for any active capture to finish before disposing the hardware!
+    while (_captureInFlight) {
+      await Future.delayed(const Duration(milliseconds: 50));
+    }
+    
+    // Give the MTK Camera HAL a tiny buffer to flush its file descriptors
+    await Future.delayed(const Duration(milliseconds: 200));
 
     await _controller?.dispose();
     _controller = null;
@@ -155,47 +208,9 @@ class CameraService extends ChangeNotifier {
     }
   }
 
-  Future<void> _captureFrame() async {
-    if (!_isStreaming || _captureInFlight || _controller == null || !_controller!.value.isInitialized) {
-      return;
-    }
-
-    _captureInFlight = true;
-    final startedAt = DateTime.now();
-    try {
-      final picture = await _controller!.takePicture();
-      final Uint8List bytes = await picture.readAsBytes();
-      _lastFramePath = picture.path;
-      _lastFrameBytes = bytes;
-      
-      // Delete temporary picture file to prevent disk fill-up and I/O degradation
-      if (!kIsWeb) {
-        try {
-          final file = File(picture.path);
-          if (await file.exists()) {
-            await file.delete();
-          }
-        } catch (e) {
-          debugPrint('CameraService: Failed to delete temp picture file: $e');
-        }
-      }
-
-      _framesCaptured += 1;
-      _analysisCount += 1;
-      _lastAnalysisLatencyMs = DateTime.now().difference(startedAt).inMilliseconds.toDouble();
-      _errorMessage = null;
-    } catch (error) {
-      _framesDropped += 1;
-      _errorMessage = 'Frame capture failed: $error';
-    } finally {
-      _captureInFlight = false;
-      notifyListeners();
-    }
-  }
-
   @override
   void dispose() {
-    _timer?.cancel();
+    stopStreaming();
     _controller?.dispose();
     super.dispose();
   }

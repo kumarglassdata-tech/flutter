@@ -14,24 +14,34 @@ class ContextEngineOutput {
   });
 
   factory ContextEngineOutput.fromJson(Map<String, dynamic> json) {
-    final sceneVal = json['scene'] ?? json['scene_context'] ?? json['gps_response']?['hazard_detection']?['zone_name'] ?? 'unknown';
-    final scene = sceneVal is Map ? (sceneVal['scene_label'] ?? 'unknown') : sceneVal.toString();
+    // Scene Context
+    var scene = json['scene_understanding']?['label'];
+    if (scene == null) {
+      final sceneVal = json['scene'] ?? json['scene_context'] ?? json['gps_response']?['hazard_detection']?['zone_name'] ?? 'unknown';
+      scene = sceneVal is Map ? (sceneVal['scene_label'] ?? 'unknown') : sceneVal.toString();
+    }
 
-    final vision = json['results']?['vision'] ?? json['vision_response'];
-    final rawObjects = vision?['objects'] ?? vision?['detected_objects'] ?? json['detected_objects'] ?? json['tracked_objects'];
+    // Tracked Objects
     final List<String> objects = [];
+    final rawObjects = json['scene_objects'] ?? json['results']?['vision']?['objects'] ?? json['detected_objects'] ?? json['tracked_objects'];
     if (rawObjects is List) {
       for (var item in rawObjects) {
         if (item is Map) {
-          objects.add((item['class'] ?? item['label'] ?? item['name'] ?? item['object_name'] ?? '').toString());
+          objects.add((item['class_name'] ?? item['class'] ?? item['label'] ?? item['name'] ?? item['object_name'] ?? '').toString());
         } else {
           objects.add(item.toString());
         }
       }
     }
 
-    final rawSalient = json['top_salient_objects'] ?? json['product_salience'];
+    // Salient Objects / Gaze Grounding
     final List<String> salient = [];
+    final groundedTarget = json['gaze_grounding']?['grounded_target'];
+    if (groundedTarget != null && groundedTarget != 'unknown') {
+      salient.add(groundedTarget.toString());
+    }
+
+    final rawSalient = json['top_salient_objects'] ?? json['product_salience'];
     if (rawSalient is List) {
       for (var item in rawSalient) {
         if (item is Map) {
@@ -121,67 +131,75 @@ class ContextEngineOutput {
 }
 
 class BIEFrame {
-  final String intent;
-  final double confidence;
+  final String behavioralState;   // e.g. "product_interest", "comparison"
+  final double stateConfidence;   // confidence in the behavioral state classification
   final String gazeTarget;
-  final double salienceScore;
+  final double salienceScore;     // relevance_score from BE — drives the gate
+  final double intentScore;       // computed commerce intent score from BCPPayload
   final Map<String, dynamic> raw;
 
+  // keep legacy getters so nothing else breaks
+  String get intent => behavioralState;
+  double get confidence => stateConfidence;
+
   BIEFrame({
-    required this.intent,
-    required this.confidence,
+    required this.behavioralState,
+    required this.stateConfidence,
     required this.gazeTarget,
     required this.salienceScore,
+    required this.intentScore,
     required this.raw,
   });
 
   factory BIEFrame.fromJson(Map<String, dynamic> json, {String? defaultGazeTarget}) {
-    var intent = json['intent'] ?? json['behavioral_state'] ?? json['behavior_state'] ?? json['voice_nlu']?['active_intent'] ?? 'unknown';
-    final confidence = (json['confidence'] ?? json['state_confidence'] ?? 0.0).toDouble();
-    var gazeTarget = json['gaze_target'] ?? json['gaze_grounding']?['grounded_target'] ?? 'unknown';
-    
+    final behavioralState = (json['behavioral_state'] ?? json['intent'] ?? json['voice_nlu']?['active_intent'] ?? 'unknown').toString();
+    final stateConfidence = (json['state_confidence'] ?? json['confidence'] ?? 0.0).toDouble();
+
+    var gazeTarget = json['gaze_grounding']?['grounded_target']?.toString() ?? 'unknown';
+    if (gazeTarget == 'unknown') {
+      final salient = json['top_salient_objects'];
+      if (salient is List && salient.isNotEmpty) {
+        gazeTarget = salient.first['class_name']?.toString() ?? 'unknown';
+      }
+    }
     if (gazeTarget == 'unknown' && defaultGazeTarget != null) {
       gazeTarget = defaultGazeTarget;
     }
-    if (intent == 'unknown' && gazeTarget != 'unknown') {
-      intent = 'queryProduct';
-    }
 
-    var salience = 0.0;
-    
-    // Check for cognitive output from backend
-    final cogOutput = json['cognitive_output'];
-    if (cogOutput != null && cogOutput is Map) {
-      if (cogOutput['commerce_relevance_score'] != null) {
-        salience = (cogOutput['commerce_relevance_score'] as num).toDouble();
-      }
-    }
-
+    var salience = (json['relevance_score'] ?? 0.0).toDouble();
     if (salience == 0.0) {
-      final bcpObj = json['bcp'] ?? json;
-      if (bcpObj is Map) {
-        final parsedBcp = BCPPayload.fromJson(bcpObj as Map<String, dynamic>);
-        salience = parsedBcp.intentScore;
-        if (salience == 0.0) {
-          salience = (bcpObj['relevance_score'] ?? bcpObj['state_confidence'] ?? 0.0).toDouble();
-        }
+      final salient = json['top_salient_objects'];
+      if (salient is List && salient.isNotEmpty) {
+        salience = (salient.first['salience_score'] ?? 0.0).toDouble();
       }
     }
-    
-    if (salience == 0.0 && gazeTarget != 'unknown') {
-      salience = 0.8;
-    }
 
-    // Boost salience if there's an active voice intent
-    if (intent != 'unknown' && json['voice_nlu']?['active_intent'] != null) {
-      salience = salience < 0.9 ? 0.95 : salience;
+    // Compute commerce intent score from intent_probs
+    final intentProbs = (json['intent_probs'] ?? json['state_probabilities']) as Map<String, dynamic>? ?? {};
+    double commerceScore = 0.0;
+    if (intentProbs.isNotEmpty) {
+      commerceScore =
+          (intentProbs['product_comparison'] ?? 0.0).toDouble() +
+          (intentProbs['purchase_consideration'] ?? 0.0).toDouble() +
+          (intentProbs['assistance_seeking'] ?? 0.0).toDouble();
+    } else {
+      if (behavioralState == 'product_comparison' ||
+          behavioralState == 'purchase_consideration' ||
+          behavioralState == 'assistance_seeking') {
+        commerceScore = stateConfidence;
+      }
     }
+    final entropy = (json['entropy'] ?? 0.0).toDouble();
+    final hesitation = (json['hesitation_score'] ?? 0.0).toDouble();
+    final hMin = entropy > 1.6 ? 1.6 : entropy;
+    final intentScore = (0.5 * commerceScore) + (0.3 * (1.0 - (hMin / 1.6))) + (0.2 * hesitation);
 
     return BIEFrame(
-      intent: intent,
-      confidence: confidence,
+      behavioralState: behavioralState,
+      stateConfidence: stateConfidence,
       gazeTarget: gazeTarget,
       salienceScore: salience,
+      intentScore: intentScore,
       raw: json,
     );
   }
@@ -192,13 +210,8 @@ class BIEFrame {
     final mockRaw = {
       "timestamp_ms": 1717320000000,
       "meta": {
-        "frame_reliability": {
-          "gaze_tracker_confidence": 0.95
-        },
-        "telemetry": {
-          "temperature_c": 38.5,
-          "is_throttled": false
-        }
+        "frame_reliability": {"gaze_tracker_confidence": 0.95},
+        "telemetry": {"temperature_c": 38.5, "is_throttled": false}
       },
       "gaze_grounding": {
         "grounded_target": "organic_milk_1l",
@@ -206,53 +219,42 @@ class BIEFrame {
         "spatial_proximity_px": 42.5
       },
       "interaction_primitives": {
-        "pickup": {
-          "active": true,
-          "object_id": 102,
-          "displacement_px": 125.0,
-          "class_name": "organic_milk_1l"
-        },
-        "product_rotation": {
-          "active": true,
-          "aspect_ratio_variance": 0.18
-        },
-        "shelf_reach": {
-          "active": false,
-          "arm_y": 0.0
-        },
-        "product_comparison": {
-          "active": false,
-          "compared_items": []
-        }
+        "pickup": {"active": true, "object_id": 102, "displacement_px": 125.0, "class_name": "organic_milk_1l"},
+        "product_rotation": {"active": true, "aspect_ratio_variance": 0.18},
+        "shelf_reach": {"active": false, "arm_y": 0.0},
+        "product_comparison": {"active": false, "compared_items": []}
       },
       "voice_nlu": {
         "rhino_active": true,
         "active_intent": "queryProduct",
-        "slots": {
-          "product_name": "organic_milk_1l",
-          "attribute": "price"
-        }
+        "slots": {"product_name": "organic_milk_1l", "attribute": "price"}
       },
-      "scene_understanding": {
-        "label": "shelf_b"
+      "scene_understanding": {"label": "shelf_b"},
+      "activity_understanding": {"label": "evaluating"},
+      "intent_probs": {
+        "passive_browsing": 0.05,
+        "product_interest": 0.60,
+        "comparison": 0.05,
+        "purchase_consideration": 0.25,
+        "assistance_seeking": 0.05
       },
-      "activity_understanding": {
-        "label": "evaluating"
-      }
+      "entropy": 0.42,
+      "hesitation_score": 0.75,
+      "relevance_score": 0.885
     };
     return BIEFrame.fromJson(mockRaw);
   }
 }
 
 class BCPPayload {
-  final double relevanceScore;
-  final bool gateOpen;
-  final String behavioralState;
   final double entropy;
   final double hesitationScore;
   final double stateConfidence;
   final Map<String, dynamic> stateProbabilities;
   final double intentScore;
+  final double relevanceScore;
+  final bool gateOpen;
+  final String behavioralState;
 
   BCPPayload({
     required this.relevanceScore,
@@ -308,6 +310,7 @@ class InteractionResponse {
   final String llmGateStatus;
   final BCPPayload bcp;
   final Map<String, dynamic> raw;
+  final bool isAssistantGenerating;
 
   InteractionResponse({
     required this.dialogueMode,
@@ -315,6 +318,7 @@ class InteractionResponse {
     required this.llmGateStatus,
     required this.bcp,
     required this.raw,
+    this.isAssistantGenerating = false,
   });
 
   factory InteractionResponse.fromJson(Map<String, dynamic> json) {
@@ -338,6 +342,7 @@ class InteractionResponse {
       llmGateStatus: llmGateStatus,
       bcp: BCPPayload.fromJson(json['bcp'] ?? {}),
       raw: json,
+      isAssistantGenerating: json['is_assistant_generating'] ?? false,
     );
   }
 
@@ -421,9 +426,9 @@ class EcomAdProduct {
     } 
 
     if (idVal.isNotEmpty && !idVal.startsWith('http')) {
-      final base = EnvConfig.ecomHandlerUrl.endsWith('/buy') 
-          ? EnvConfig.ecomHandlerUrl.replaceAll('/buy', '') 
-          : EnvConfig.ecomHandlerUrl;
+      final base = EnvConfig.actionHubBuyUrl.endsWith('/buy') 
+          ? EnvConfig.actionHubBuyUrl.replaceAll('/buy', '') 
+          : EnvConfig.actionHubBuyUrl;
       if (idVal.startsWith('/')) {
         idVal = '$base$idVal';
       } else if (idVal.startsWith('myna-ah')) {
@@ -446,6 +451,15 @@ class EcomAdProduct {
       imageUrl: json['image_url']?.toString() ?? json['image']?.toString() ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'price_val': price,
+      'image_url': imageUrl,
+    };
+  }
 }
 
 class EcomAdResponse {
@@ -467,18 +481,22 @@ class EcomAdResponse {
       parsed.add(EcomAdProduct.fromJson(ad));
     }
 
-    final list = json['suggestions'] ?? json['recommendations'] ?? json['comparison_data'] ?? [];
+    final list = json['suggestions'] ?? json['recommendations'] ?? json['comparison_data'] ?? json['mall_feed'] ?? [];
     for (final item in (list as List)) {
       final map = item as Map<String, dynamic>;
       final product = EcomAdProduct.fromJson(map);
-      // Avoid duplicating the ad_content if it's already there
-      if (parsed.isEmpty || parsed.first.name != product.name) {
+      if (!parsed.any((p) => p.id == product.id)) {
         parsed.add(product);
       }
     }
 
+    // Fallback: if it's a flat Action Hub payload
+    if (parsed.isEmpty && (json.containsKey('product_url') || json.containsKey('link') || json.containsKey('url') || json.containsKey('image_url') || json.containsKey('image'))) {
+      parsed.add(EcomAdProduct.fromJson(json));
+    }
+
     return EcomAdResponse(
-      status: json['status'] ?? (json['display_ad'] == true ? 'success' : 'suppressed'),
+      status: json['status']?.toString() ?? 'success',
       suggestions: parsed,
       raw: json,
     );
@@ -523,7 +541,7 @@ class MemoryResponse {
 
   factory MemoryResponse.fromJson(Map<String, dynamic> json) {
     var recallText = '';
-    final memories = json['semantic_memories'] ?? json['memories'];
+    final memories = json['semantic_memories'] ?? json['memories'] ?? (json['memory_response'] as Map?)?['semantic_memories'];
     if (memories is List) {
       recallText = memories.map((m) {
         if (m is Map) {

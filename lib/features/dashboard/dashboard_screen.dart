@@ -23,6 +23,7 @@ import 'widgets/control_panel.dart';
 import 'widgets/meta_stream_tab.dart';
 import 'widgets/placeholder_tab.dart';
 import 'widgets/normal_user_cards.dart';
+import 'widgets/consumer_analytics_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -46,7 +47,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       if (mounted) {
         final auth = context.read<AuthProvider>();
         setState(() {
-          _tabCount = auth.isAdmin ? 5 : 1;
+          _tabCount = auth.isAdmin ? 5 : 2;
           _tabController = TabController(length: _tabCount, vsync: this);
         });
 
@@ -81,6 +82,7 @@ class _DashboardScreenState extends State<DashboardScreen>
       'Reports',
     ] : [
       'Dashboard',
+      'Analytics',
     ];
 
     return Scaffold(
@@ -117,6 +119,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           const PlaceholderTab(title: 'Reports'),
         ] : [
           _MainDashboardContent(settings: settings),
+          const ConsumerAnalyticsTab(),
         ],
       ),
     );
@@ -146,7 +149,7 @@ class _MainDashboardContent extends StatelessWidget {
             onStop: () => context.read<SessionProvider>().stopRuntime(),
           ).animate().fadeIn(duration: 400.ms),
         ),
-        if (session.isAudioLoopRunning)
+        if (state.isSessionActive)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
@@ -168,97 +171,7 @@ class _MainDashboardContent extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               children: [
-                if (isAdmin) ...[
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          const Color(0xFF6366F1).withValues(alpha: 0.15), // Indigo
-                          const Color(0xFF00E5FF).withValues(alpha: 0.05), // Cyan
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF6366F1).withValues(alpha: 0.3),
-                        width: 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1).withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.admin_panel_settings_rounded,
-                            color: Color(0xFF818CF8),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'ADMIN CONSOLE ACTIVE',
-                                style: TextStyle(
-                                  color: Color(0xFFE0E7FF),
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 11,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              SizedBox(height: 2),
-                              Text(
-                                'Telemetry diagnostics and raw JSON streams unlocked.',
-                                style: TextStyle(
-                                  color: Color(0xFF94A3B8),
-                                  fontSize: 10,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF818CF8).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Text(
-                            'SECURE',
-                            style: TextStyle(
-                              color: Color(0xFFC7D2FE),
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.05),
-                ],
 
-                const SourceInputSelector()
-                    .animate()
-                    .fadeIn(duration: 400.ms)
-                    .slideY(begin: 0.08),
-
-                const SizedBox(height: 16),
 
           if (session.sourceManager.activeType == SourceType.phone)
             CameraPreviewCard(
@@ -298,14 +211,21 @@ class _MainDashboardContent extends StatelessWidget {
                       child: Text(
                         session.sourceManager.activeType == SourceType.mock
                             ? 'Streaming simulated mock data...'
-                            : 'Streaming laptop source data...',
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                            : 'Connected to Meta Glasses feed',
                       ),
                     ),
                   ],
                 ),
               ),
-            ).animate().fadeIn(duration: 400.ms),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.08),
+
+          if (isAdmin) ...[
+            const SizedBox(height: 16),
+            const SourceInputSelector()
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.08),
+          ],
 
           const SizedBox(height: 16),
           // Normal User + Admin Cards

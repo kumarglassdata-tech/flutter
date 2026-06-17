@@ -1,42 +1,55 @@
 import 'dart:typed_data';
 
-enum MediaSource { meta, phone, web, mock }
-
 class VideoFrame {
   final Uint8List bytes;
+  final int timestamp;
   final int width;
   final int height;
 
-  VideoFrame({required this.bytes, required this.width, required this.height});
+  const VideoFrame({required this.bytes, this.timestamp = 0, this.width = 0, this.height = 0});
 }
 
 class AudioChunk {
   final List<double> samples;
+  final int timestamp;
 
-  AudioChunk(this.samples);
+  const AudioChunk(this.samples, {this.timestamp = 0});
 }
 
 class LocationData {
   final double latitude;
   final double longitude;
+  final int timestamp;
 
-  LocationData({required this.latitude, required this.longitude});
+  const LocationData({required this.latitude, required this.longitude, this.timestamp = 0});
+}
+
+enum InputSource {
+  META,
+  PHONE,
+  WEBCAM,
+  UPLOAD,
+  MOCK,
 }
 
 class UnifiedInput {
-  final VideoFrame? videoFrame;
-  final AudioChunk? audioChunk;
-  final LocationData? location;
-  final MediaSource source;
-  final int timestamp;
-  final Map<String, dynamic>? mediaMetadata;
+  final Uint8List? imageBytes;
+  final Uint8List? audioBytes;
+  final double? latitude;
+  final double? longitude;
+  final InputSource source;
+  final DateTime timestamp;
+  final Map<String, dynamic> metadata;
+  final Map<String, dynamic>? voiceNlu;
 
-  UnifiedInput({
-    this.videoFrame,
-    this.audioChunk,
-    this.location,
+  const UnifiedInput({
+    this.imageBytes,
+    this.audioBytes,
+    this.latitude,
+    this.longitude,
     required this.source,
     required this.timestamp,
-    this.mediaMetadata,
+    this.metadata = const {},
+    this.voiceNlu,
   });
 }

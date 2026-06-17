@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1086740481465",
+    "project_id": "smartmyna",
+    "storage_bucket": "smartmyna.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1086740481465:android:b098a8e60b7023e4ace268",
+        "android_client_info": {
+          "package_name": "com.smartglass.ai.smartglass_flutter"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwEpg4z3rPTO3KgAAlKhlONsm401QvEYE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

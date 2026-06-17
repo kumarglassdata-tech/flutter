@@ -18,7 +18,7 @@ class NormalUserCards extends StatelessWidget {
         const SizedBox(height: 12),
         _buildObjectCard(context),
         const SizedBox(height: 12),
-        _buildIntentCard(),
+        _buildBehaviorCard(),
         const SizedBox(height: 12),
         _buildInteractionCard(),
         const SizedBox(height: 12),
@@ -60,15 +60,17 @@ class NormalUserCards extends StatelessWidget {
     );
   }
 
-  Widget _buildIntentCard() {
-    final intent = state.lastBIEFrame?.intent ?? 'Idle';
-    final confidence = state.lastBIEFrame?.confidence ?? 0.0;
-    
+  Widget _buildBehaviorCard() {
+    final behavioralState = state.lastBIEFrame?.behavioralState ?? 'Idle';
+    final stateConfidence = state.lastBIEFrame?.stateConfidence ?? 0.0;
+    final intentScore = state.lastBIEFrame?.intentScore ?? 0.0;
+    final commerceRelevance = state.lastBIEFrame?.salienceScore ?? 0.0;
+
     return _buildCard(
       icon: Icons.psychology_rounded,
       iconColor: Colors.deepPurpleAccent,
-      title: 'Intent Analysis',
-      content: '$intent (${(confidence * 100).toStringAsFixed(0)}%)',
+      title: 'Behavioral State Analysis',
+      content: '$behavioralState  (conf: ${(stateConfidence * 100).toStringAsFixed(0)}%)\nIntent Score: ${(intentScore * 100).toStringAsFixed(0)}%  |  Relevance: ${(commerceRelevance * 100).toStringAsFixed(0)}%',
     );
   }
 
@@ -122,32 +124,37 @@ class NormalUserCards extends StatelessWidget {
             const SizedBox(height: 12),
             ...suggestions.take(2).map((p) => Padding(
               padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                children: [
-                  if (p.imageUrl.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(p.imageUrl, width: 40, height: 40, fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 40),
+              child: InkWell(
+                onTap: () => _launchWithWait(context, p.id),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    children: [
+                      if (p.imageUrl.isNotEmpty)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(p.imageUrl, width: 40, height: 40, fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.image_not_supported, size: 40),
+                          ),
+                        ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       ),
-                    ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
-                        Text('\$${p.price.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                      IconButton(
+                        icon: const Icon(Icons.open_in_new_rounded, color: AppTheme.primary, size: 20),
+                        onPressed: () => _launchWithWait(context, p.id),
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.open_in_new_rounded, color: AppTheme.primary, size: 20),
-                    onPressed: () {
-                      _launchWithWait(context, p.id);
-                    },
-                  ),
-                ],
+                ),
               ),
             )).toList(),
           ],

@@ -59,6 +59,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               _SettingsToggle('Use Mock Meta Stream', settings.useMockMeta,
                   (v) => settings.setUseMockMeta(v)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Salience UI Threshold: ${(settings.salienceThreshold * 100).toInt()}%'),
+                    Slider(
+                      value: settings.salienceThreshold,
+                      min: 0.1,
+                      max: 1.0,
+                      divisions: 90,
+                      activeColor: AppTheme.primary,
+                      onChanged: (v) => settings.setSalienceThreshold(v),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),

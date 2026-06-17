@@ -28,21 +28,22 @@ class SafetyMemoryStep extends PipelineStep<BIEFrame, MemoryResponse> {
     }
 
     try {
-      // 1. Recall memory
+      // 1. Recall memory — query by gaze target
       final recallPayload = {
+        'operation': 'RECALL',
         'query': input.gazeTarget,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'top_k': 3,
+        'confidence_threshold': 0.4,
       };
       final recallResponse = await _client.recallMemory(recallPayload);
 
-      // 2. Store current interaction memory in background (non-blocking)
+      // 2. Store current interaction in background (non-blocking)
       final storePayload = {
-        'intent': input.intent,
-        'gaze_target': input.gazeTarget,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
+        'operation': 'STORE',
+        'content': '${input.intent} on ${input.gazeTarget}',
+        'memory_type': 'interaction',
       };
       unawaited(_client.storeMemory(storePayload).catchError((_) {
-        // Log store failure but don't fail recall
         return <String, dynamic>{};
       }));
 

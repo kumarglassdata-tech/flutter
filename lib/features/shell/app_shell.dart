@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:smartglass_flutter/core/providers/auth_provider.dart';
+import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smartglass_flutter/features/shell/widgets/myna_assistant_bottom_sheet.dart';
 
 class AppShell extends StatefulWidget {
   final Widget child;
@@ -20,10 +22,49 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
+  late SessionProvider _sessionProvider;
+  String _lastCheckedUtterance = '';
+  bool _isBottomSheetOpen = false;
+
   @override
   void initState() {
     super.initState();
     _requestPermissions();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sessionProvider = context.read<SessionProvider>();
+    _sessionProvider.addListener(_onSessionUpdate);
+  }
+
+  @override
+  void dispose() {
+    _sessionProvider.removeListener(_onSessionUpdate);
+    super.dispose();
+  }
+
+  void _onSessionUpdate() {
+    if (!mounted) return;
+    final utterance = _sessionProvider.state.lastInteractionResponse?.lastUtterance ?? '';
+    if (utterance != _lastCheckedUtterance && utterance.isNotEmpty) {
+      _lastCheckedUtterance = utterance;
+      final text = utterance.toLowerCase();
+      if (text.contains('hey myna') || text.contains('hello myna') || text.contains('myna')) {
+        if (!_isBottomSheetOpen) {
+          _isBottomSheetOpen = true;
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (ctx) => const MynaAssistantBottomSheet(),
+          ).whenComplete(() {
+            _isBottomSheetOpen = false;
+          });
+        }
+      }
+    }
   }
 
   Future<void> _requestPermissions() async {
@@ -32,6 +73,10 @@ class _AppShellState extends State<AppShell> {
       Permission.microphone,
       Permission.location,
     ].request();
+    
+    if (mounted) {
+      context.read<SessionProvider>().startAlwaysListening();
+    }
   }
 
   @override
@@ -48,6 +93,37 @@ class _AppShellState extends State<AppShell> {
             _SideRail(currentLocation: location, auth: auth),
           Expanded(child: widget.child),
         ],
+      ),
+      floatingActionButton: GestureDetector(
+        onTap: () {
+          showModalBottomSheet(
+            context: context,
+            backgroundColor: Colors.transparent,
+            isScrollControlled: true,
+            builder: (ctx) => const MynaAssistantBottomSheet(),
+          );
+        },
+        child: Container(
+          width: 64,
+          height: 64,
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            color: Color(0xFF2563EB),
+            boxShadow: [
+              BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+            ],
+          ),
+          child: Center(
+            child: ClipOval(
+              child: Image.asset(
+                "assets/images/myna_bot.png",
+                width: 44,
+                height: 44,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
       ),
       // Bottom nav for mobile
       bottomNavigationBar: MediaQuery.of(context).size.width < 720
@@ -68,7 +144,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems(context, auth);
+    final items = _navItems();
     final currentIndex = _currentIndex(currentLocation);
 
     return Container(
@@ -109,7 +185,7 @@ class _SideRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems(context, auth);
+    final items = _navItems();
     final currentIndex = _currentIndex(currentLocation);
 
     return NavigationRail(
@@ -229,16 +305,27 @@ class _AppDrawer extends StatelessWidget {
           _drawerItem(context, Icons.info_rounded, 'About', '/about'),
           const Spacer(),
           const Divider(),
-          ListTile(
-            leading: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
-            title: const Text('Logout',
-                style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
-            onTap: () async {
-              Navigator.pop(context);
-              await auth.logout();
-              if (context.mounted) context.go('/home');
-            },
-          ),
+          if (auth.isLoggedIn)
+            ListTile(
+              leading: const Icon(Icons.logout_rounded, color: Color(0xFFDC2626)),
+              title: const Text('Logout',
+                  style: TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
+              onTap: () async {
+                Navigator.pop(context);
+                await auth.logout();
+                if (context.mounted) context.go('/home');
+              },
+            )
+          else
+            ListTile(
+              leading: const Icon(Icons.login_rounded, color: AppTheme.primary),
+              title: const Text('Login',
+                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+              onTap: () {
+                Navigator.pop(context);
+                context.go('/login?target=/home');
+              },
+            ),
           const SizedBox(height: 8),
         ],
       ),
@@ -267,11 +354,13 @@ class _NavItem {
   const _NavItem(this.label, this.icon, this.route);
 }
 
-List<_NavItem> _navItems(BuildContext context, AuthProvider auth) => const [
-      _NavItem('HOME', Icons.home_rounded, '/home'),
-      _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
-      _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
-    ];
+List<_NavItem> _navItems() {
+  return const [
+    _NavItem('HOME', Icons.home_rounded, '/home'),
+    _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
+    _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
+  ];
+}
 
 int _currentIndex(String location) {
   if (location.startsWith('/fop')) return 1;
@@ -280,8 +369,9 @@ int _currentIndex(String location) {
 }
 
 void _onTap(BuildContext context, int index, AuthProvider auth) {
-  final routes = ['/home', '/fop', '/profile'];
-  final route = routes[index];
+  final items = _navItems();
+  if (index < 0 || index >= items.length) return;
+  final route = items[index].route;
   if (!auth.isLoggedIn && route != '/home') {
     context.go('/login?target=${Uri.encodeComponent(route)}');
   } else {

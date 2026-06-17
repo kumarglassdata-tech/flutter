@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:smartglass_flutter/core/engines/shared/circuit_breaker.dart';
 import 'package:smartglass_flutter/core/engines/shared/engine_registry.dart';
 import 'package:smartglass_flutter/core/engines/shared/retry_policy.dart';
+import 'package:smartglass_flutter/core/models/engine_models.dart';
 
 class MemoryClient {
   final http.Client _client;
@@ -23,25 +24,43 @@ class MemoryClient {
         circuitBreaker = CircuitBreaker(name: 'SafetyMemory');
 
   Future<Map<String, dynamic>> storeMemory(Map<String, dynamic> payload) async {
-    return {'status': 'success'};
+    return circuitBreaker.execute(() async {
+      final url = Uri.parse(baseUrl ?? EngineRegistry.getEngineUrl('memory'));
+      
+      var request = http.MultipartRequest('POST', url);
+      
+      // Add standard fields
+      payload.forEach((key, value) {
+        if (key != 'content') {
+           request.fields[key] = value.toString();
+        }
+      });
+      
+      // Add the content as the 'file' field the backend requires
+      final contentStr = payload['content']?.toString() ?? '';
+      request.files.add(http.MultipartFile.fromString(
+        'file',
+        contentStr,
+        filename: 'memory.txt'
+      ));
+      
+      final streamedResponse = await _client.send(request).timeout(const Duration(seconds: 8));
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception('Memory store failed: HTTP ${response.statusCode}');
+      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    });
   }
 
   Future<Map<String, dynamic>> recallMemory(Map<String, dynamic> payload) async {
     return circuitBreaker.execute(() async {
-      final resolvedUrl = baseUrl ?? EngineRegistry.getEngineUrl('memory');
-      final Uri url;
-      final bool isReleaseGateway = resolvedUrl.contains('glassdata.ai');
-      if (isReleaseGateway) {
-        url = Uri.parse('https://myna-sme-dev.glassdata.ai/api/release?text=${Uri.encodeComponent(payload['query'] ?? '')}');
-      } else {
-        if (resolvedUrl.endsWith('/') && !resolvedUrl.contains('/api/')) {
-          url = Uri.parse('${resolvedUrl}api/v1/memory/all');
-        } else if (!resolvedUrl.contains('/api/') && resolvedUrl.contains('glassdata.ai')) {
-          url = Uri.parse('$resolvedUrl/api/v1/memory/all');
-        } else {
-          url = Uri.parse(resolvedUrl);
-        }
-      }
+      final baseUri = Uri.parse(baseUrl ?? EngineRegistry.getEngineUrl('memory'));
+      final queryText = payload['query']?.toString() ?? '';
+      
+      // Safety Memory engine expects GET /api/release?text=...
+      final url = baseUri.replace(queryParameters: {'text': queryText});
 
       var attempt = 0;
       while (true) {
@@ -49,19 +68,18 @@ class MemoryClient {
         try {
           final response = await _client.get(
             url,
+            headers: {'Content-Type': 'application/json'},
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
-            throw Exception('Safety Memory recall error: HTTP ${response.statusCode}');
+            if (fallbackToMock) return MemoryResponse.mock().raw;
+            throw Exception('Memory recall failed: HTTP ${response.statusCode}');
           }
 
-          final responseMap = jsonDecode(response.body) as Map<String, dynamic>;
-          if (responseMap.containsKey('memory_response')) {
-            return responseMap['memory_response'] as Map<String, dynamic>;
-          }
-          return responseMap;
+          return jsonDecode(response.body) as Map<String, dynamic>;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
+            if (fallbackToMock) return MemoryResponse.mock().raw;
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));

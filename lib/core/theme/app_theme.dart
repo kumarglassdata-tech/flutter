@@ -13,6 +13,10 @@ class AppTheme {
   static const Color onSurfaceVariant = Color(0xFF5A6B7D);
   static const Color outline = Color(0xFFB8D4EE);
   static const Color error = Color(0xFFDC2626);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color textPrimary = Color(0xFF1A2B3D);
+  static const Color textSecondary = Color(0xFF5A6B7D);
 
   // Dark mode colors
   static const Color darkBackground = Color(0xFF0F172A);

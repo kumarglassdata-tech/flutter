@@ -29,11 +29,13 @@ GoRouter createRouter(AuthProvider auth) {
       final isLogin = state.matchedLocation.startsWith('/login');
       final isSplash = state.matchedLocation == '/splash';
       final isAbout = state.matchedLocation == '/about';
+      final isHome = state.matchedLocation == '/home';
 
-      // Always allow splash, login, and about
-      if (isSplash || isAbout) return null;
-      // If not logged in and trying to access protected route
-      if (!loggedIn && !isLogin) {
+      // Always allow splash, login, about, and home
+      if (isSplash || isAbout || isHome || isLogin) return null;
+      
+      // If not logged in and trying to access a protected route
+      if (!loggedIn) {
         final target = state.matchedLocation;
         return '/login?target=${Uri.encodeComponent(target)}';
       }

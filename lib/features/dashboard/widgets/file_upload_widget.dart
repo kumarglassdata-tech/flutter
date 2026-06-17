@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/core/sources/video_upload/video_upload_source_adapter.dart';
+import 'package:smartglass_flutter/core/sources/source_manager.dart';
 import 'bounding_box_overlay.dart';
 
 class FileUploadWidget extends StatefulWidget {
@@ -23,12 +24,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
     final session = context.watch<SessionProvider>();
     final activeAdapter = session.sourceManager.activeAdapter;
 
-    if (activeAdapter is! VideoUploadSourceAdapter) {
-      return const SizedBox.shrink();
-    }
-
-    final fileName = activeAdapter.fileName;
-    final isImage = activeAdapter.isImage;
+    final isVideoActive = activeAdapter is VideoUploadSourceAdapter;
+    final fileName = isVideoActive ? (activeAdapter as VideoUploadSourceAdapter).fileName : null;
+    final isImage = isVideoActive ? (activeAdapter as VideoUploadSourceAdapter).isImage : false;
     final hasFile = fileName != null;
     final isSessionActive = session.state.isSessionActive;
     final state = session.state;
@@ -199,7 +197,9 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
         }
 
         if (mounted) {
-          context.read<SessionProvider>().setUploadedFile(bytes, name, isImage);
+          final session = context.read<SessionProvider>();
+          session.setUploadedFile(bytes, name, isImage);
+          session.sourceManager.switchSource(SourceType.videoUpload);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Uploaded file source set to: $name')),
           );

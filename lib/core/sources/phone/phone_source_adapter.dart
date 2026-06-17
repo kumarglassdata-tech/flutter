@@ -49,7 +49,7 @@ class PhoneSourceAdapter implements SourceAdapter {
 
     // Start local services
     await _cameraService.startStreaming();
-    await _audioService.start();
+    // await _audioService.start(); // DISABLED: AudioStreamManager handles mic now
     await _locationService.start();
 
     // Listeners

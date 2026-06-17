@@ -11,6 +11,7 @@ class StreamCoordinator extends ChangeNotifier {
   final SourceManager _sourceManager;
   final PipelineCoordinator _pipelineCoordinator;
   final TelemetryService _telemetryService;
+  final Map<String, dynamic>? Function()? getVoiceNlu;
 
   StreamSubscription<VideoFrame>? _videoSub;
   StreamSubscription<AudioChunk>? _audioSub;
@@ -30,6 +31,7 @@ class StreamCoordinator extends ChangeNotifier {
     required SourceManager sourceManager,
     required PipelineCoordinator pipelineCoordinator,
     required TelemetryService telemetryService,
+    this.getVoiceNlu,
   })  : _sourceManager = sourceManager,
         _pipelineCoordinator = pipelineCoordinator,
         _telemetryService = telemetryService;
@@ -97,14 +99,16 @@ class StreamCoordinator extends ChangeNotifier {
     }
 
     final input = UnifiedInput(
-      videoFrame: frame,
-      audioChunk: _latestAudio,
-      location: _latestLocation,
+      imageBytes: frame.bytes,
+      audioBytes: null, // UnifiedInput audioBytes is Uint8List?, AudioChunk has List<double>. Conversion happens elsewhere if needed.
+      latitude: _latestLocation?.latitude,
+      longitude: _latestLocation?.longitude,
       source: _sourceManager.activeType == SourceType.meta
-          ? MediaSource.meta
-          : (_sourceManager.activeType == SourceType.phone ? MediaSource.phone : MediaSource.mock),
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-      mediaMetadata: metadata,
+          ? InputSource.META
+          : (_sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK),
+      timestamp: DateTime.now(),
+      metadata: metadata ?? const {},
+      voiceNlu: getVoiceNlu?.call(),
     );
 
     try {

@@ -22,15 +22,11 @@ class EcomClient {
 
   Future<Map<String, dynamic>> queryEcom(Map<String, dynamic> requestPayload) async {
     return circuitBreaker.execute(() async {
-      final body = jsonEncode(requestPayload);
-      final resolvedUrl = EngineRegistry.ecomHandlerUrl;
-      final Uri url;
-      if (resolvedUrl.endsWith('/buy')) {
-        url = Uri.parse(resolvedUrl);
-      } else {
-        final base = resolvedUrl.endsWith('/') ? resolvedUrl.substring(0, resolvedUrl.length - 1) : resolvedUrl;
-        url = Uri.parse('$base/buy');
-      }
+      // action_type drives which endpoint: buy | recommend | lifebalance | analyze
+      final actionType = requestPayload['action_type'] as String? ?? 'buy';
+      final resolvedUrl = EngineRegistry.getEngineUrl(actionType);
+      final url = Uri.parse(resolvedUrl);
+      final body = jsonEncode(requestPayload..remove('action_type'));
 
       var attempt = 0;
       while (true) {
@@ -43,12 +39,26 @@ class EcomClient {
           ).timeout(const Duration(seconds: 8));
 
           if (response.statusCode < 200 || response.statusCode >= 300) {
+            if (fallbackToMock) {
+              return {
+                "suggestions": [
+                  {"item_id": 1, "name": "Organic Milk", "price": 4.99}
+                ]
+              };
+            }
             throw Exception('Ecom Engine server error: HTTP ${response.statusCode}');
           }
 
           return jsonDecode(response.body) as Map<String, dynamic>;
         } catch (e) {
           if (attempt > _retryPolicy.attempts) {
+            if (fallbackToMock) {
+              return {
+                "suggestions": [
+                  {"item_id": 1, "name": "Organic Milk", "price": 4.99}
+                ]
+              };
+            }
             rethrow;
           }
           await Future.delayed(_retryPolicy.backoffDelay(attempt));
