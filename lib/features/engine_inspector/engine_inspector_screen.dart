@@ -24,20 +24,30 @@ class EngineInspectorScreen extends StatelessWidget {
     final memoryState = session.healthMonitor.memoryState;
 
     // Get latencies from telemetry
-    final contextLatency = session.telemetryService.latencies['ContextEngine']?.toDouble() ?? 0.0;
-    final behaviorLatency = session.telemetryService.latencies['BehaviorEngine']?.toDouble() ?? 0.0;
-    final interactionLatency = session.telemetryService.latencies['InteractionSubsystem']?.toDouble() ?? 0.0;
-    final ecomLatency = session.telemetryService.latencies['EcomAddHandler']?.toDouble() ?? 0.0;
-    final memoryLatency = session.telemetryService.latencies['SafetyMemory']?.toDouble() ?? 0.0;
+    final contextLatency =
+        session.telemetryService.latencies['ContextEngine']?.toDouble() ?? 0.0;
+    final behaviorLatency =
+        session.telemetryService.latencies['BehaviorEngine']?.toDouble() ?? 0.0;
+    final interactionLatency = session
+            .telemetryService.latencies['InteractionSubsystem']
+            ?.toDouble() ??
+        0.0;
+    final ecomLatency =
+        session.telemetryService.latencies['EcomAddHandler']?.toDouble() ?? 0.0;
+    final memoryLatency =
+        session.telemetryService.latencies['SafetyMemory']?.toDouble() ?? 0.0;
 
     final sharedState = session.state.modelContext ?? {};
 
     // Get mock flags (check if step fell back to mock due to network/configuration issues)
-    final contextIsMock = sharedState['context_is_mock'] == true || session.sourceManager.activeType == SourceType.mock;
-    final behaviorIsMock = sharedState['behavior_is_mock'] == true || EnvConfig.behaviourIntentUrl.isEmpty;
+    final contextIsMock = sharedState['context_is_mock'] == true ||
+        session.sourceManager.activeType == SourceType.mock;
+    final behaviorIsMock = sharedState['behavior_is_mock'] == true ||
+        EnvConfig.behaviourIntentUrl.isEmpty;
     final interactionIsMock = sharedState['interaction_is_mock'] == true;
     final ecomIsMock = sharedState['ecom_is_mock'] == true;
-    final memoryIsMock = sharedState['memory_is_mock'] == true || EnvConfig.safetyMemoryUrl.isEmpty;
+    final memoryIsMock = sharedState['memory_is_mock'] == true ||
+        EnvConfig.safetyMemoryUrl.isEmpty;
 
     // Dynamically retrieve requests & responses from model context
     final contextReq = {
@@ -51,12 +61,16 @@ class EngineInspectorScreen extends StatelessWidget {
     };
     final contextRes = sharedState['context'] as Map<String, dynamic>?;
 
-    final behaviorReq = session.state.lastContextOutput != null 
+    final behaviorReq = session.state.lastContextOutput != null
         ? {
             'scene_context': session.state.lastContextOutput!.sceneContext,
             'tracked_objects': session.state.lastContextOutput!.trackedObjects,
-            'top_salient_objects': session.state.lastContextOutput!.topSalientObjects,
-            'hazards_detected': session.state.lastContextOutput!.raw['gps_response']?['hazard_detection']?['hazard_detected'] ?? false,
+            'top_salient_objects':
+                session.state.lastContextOutput!.topSalientObjects,
+            'hazards_detected':
+                session.state.lastContextOutput!.raw['gps_response']
+                        ?['hazard_detection']?['hazard_detected'] ??
+                    false,
             'meta': session.state.lastContextOutput!.raw['meta'] ?? {},
             'session_id': 'wearer_001',
             'timestamp_ms': DateTime.now().millisecondsSinceEpoch,
@@ -64,13 +78,15 @@ class EngineInspectorScreen extends StatelessWidget {
         : null;
     final behaviorRes = sharedState['behavior'] as Map<String, dynamic>?;
 
-    final interactionReq = sharedState['behavior'] != null 
+    final interactionReq = sharedState['behavior'] != null
         ? {
             'gaze_target': session.state.lastBIEFrame?.gazeTarget ?? 'Unknown',
             'alignment_score': 0.95,
-            'relevance_score': session.state.lastBIEFrame?.salienceScore ?? 0.85,
+            'relevance_score':
+                session.state.lastBIEFrame?.salienceScore ?? 0.85,
             'ambient_noise': -45.0,
-            'pickup_active': session.state.lastBIEFrame?.intent == 'purchase_consideration',
+            'pickup_active':
+                session.state.lastBIEFrame?.intent == 'purchase_consideration',
             'rotation_active': false,
             'reach_active': false,
             'compare_active': false,
@@ -86,14 +102,21 @@ class EngineInspectorScreen extends StatelessWidget {
         : null;
     final interactionRes = sharedState['interaction'] as Map<String, dynamic>?;
 
-    final ecomReq = session.state.lastBIEFrame != null 
+    final ecomReq = session.state.lastBIEFrame != null
         ? {
-            'action_type': 'recommend',
-            'salient_objects': [session.state.lastBIEFrame!.gazeTarget],
-            'interaction_mode': 'RECOMMENDATION',
+            'timestamp_ms': session.state.lastBIEFrame!.raw['timestamp_ms'] ??
+                DateTime.now().millisecondsSinceEpoch,
             'relevance_score': session.state.lastBIEFrame!.salienceScore,
-            'gaze_target': session.state.lastBIEFrame!.gazeTarget,
-            'timestamp': DateTime.now().millisecondsSinceEpoch,
+            'top_salient_objects':
+                session.state.lastBIEFrame!.raw['top_salient_objects'] is List
+                    ? session.state.lastBIEFrame!.raw['top_salient_objects']
+                    : [
+                        {
+                          'class_name': session.state.lastBIEFrame!.gazeTarget,
+                          'salience_score':
+                              session.state.lastBIEFrame!.salienceScore,
+                        }
+                      ],
           }
         : null;
     final ecomRes = sharedState['ecom'] as Map<String, dynamic>?;
@@ -110,7 +133,8 @@ class EngineInspectorScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: AppTheme.background,
         appBar: AppBar(
-          title: const Text('Engine Inspector', style: TextStyle(fontWeight: FontWeight.w700)),
+          title: const Text('Engine Inspector',
+              style: TextStyle(fontWeight: FontWeight.w700)),
           actions: [
             IconButton(
               icon: const Icon(Icons.refresh_rounded),
@@ -118,7 +142,8 @@ class EngineInspectorScreen extends StatelessWidget {
               onPressed: () {
                 session.healthMonitor.resetAllCircuits();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All engine circuit breakers reset.')),
+                  const SnackBar(
+                      content: Text('All engine circuit breakers reset.')),
                 );
               },
             ),
@@ -154,9 +179,18 @@ class EngineInspectorScreen extends StatelessWidget {
                   _InfoPanel(
                     title: 'Scene Detection Details',
                     children: [
-                      _InfoRow(label: 'Scene context', value: session.state.lastContextOutput!.sceneContext),
-                      _InfoRow(label: 'Tracked objects', value: session.state.lastContextOutput!.trackedObjects.join(', ')),
-                      _InfoRow(label: 'Top salient objects', value: session.state.lastContextOutput!.topSalientObjects.join(', ')),
+                      _InfoRow(
+                          label: 'Scene context',
+                          value: session.state.lastContextOutput!.sceneContext),
+                      _InfoRow(
+                          label: 'Tracked objects',
+                          value: session.state.lastContextOutput!.trackedObjects
+                              .join(', ')),
+                      _InfoRow(
+                          label: 'Top salient objects',
+                          value: session
+                              .state.lastContextOutput!.topSalientObjects
+                              .join(', ')),
                     ],
                   ),
                 ],
@@ -166,13 +200,14 @@ class EngineInspectorScreen extends StatelessWidget {
                   children: [
                     _InfoRow(
                       label: 'Current Location',
-                      value: '${session.state.city ?? "Unknown"}, Lat: ${session.state.latitude?.toStringAsFixed(4) ?? '0.0'}, Lon: ${session.state.longitude?.toStringAsFixed(4) ?? '0.0'}',
+                      value:
+                          '${session.state.city ?? "Unknown"}, Lat: ${session.state.latitude?.toStringAsFixed(4) ?? '0.0'}, Lon: ${session.state.longitude?.toStringAsFixed(4) ?? '0.0'}',
                     ),
                   ],
                 ),
               ],
             ),
- 
+
             // Behavior Tab
             _InspectorTab(
               name: 'Behavior Engine',
@@ -188,16 +223,26 @@ class EngineInspectorScreen extends StatelessWidget {
                   _InfoPanel(
                     title: 'salience objects',
                     children: [
-                      _InfoRow(label: 'Predicted intent', value: session.state.lastBIEFrame!.intent),
-                      _InfoRow(label: 'Confidence level', value: '${(session.state.lastBIEFrame!.confidence * 100).toStringAsFixed(1)}%'),
-                      _InfoRow(label: 'Gaze grounding target', value: session.state.lastBIEFrame!.gazeTarget),
-                      _InfoRow(label: 'Product salience score', value: session.state.lastBIEFrame!.salienceScore.toStringAsFixed(2)),
+                      _InfoRow(
+                          label: 'Predicted intent',
+                          value: session.state.lastBIEFrame!.intent),
+                      _InfoRow(
+                          label: 'Confidence level',
+                          value:
+                              '${(session.state.lastBIEFrame!.confidence * 100).toStringAsFixed(1)}%'),
+                      _InfoRow(
+                          label: 'Gaze grounding target',
+                          value: session.state.lastBIEFrame!.gazeTarget),
+                      _InfoRow(
+                          label: 'Product salience score',
+                          value: session.state.lastBIEFrame!.salienceScore
+                              .toStringAsFixed(2)),
                     ],
                   ),
                 ],
               ],
             ),
- 
+
             // Interaction Tab
             _InspectorTab(
               name: 'Interaction Subsystem',
@@ -213,14 +258,27 @@ class EngineInspectorScreen extends StatelessWidget {
                   _InfoPanel(
                     title: 'Interaction Gating Status',
                     children: [
-                      _InfoRow(label: 'Dialogue mode', value: session.state.lastInteractionResponse!.dialogueMode),
-                      _InfoRow(label: 'LLM Gate status', value: session.state.lastInteractionResponse!.llmGateStatus),
+                      _InfoRow(
+                          label: 'Dialogue mode',
+                          value: session
+                              .state.lastInteractionResponse!.dialogueMode),
+                      _InfoRow(
+                          label: 'LLM Gate status',
+                          value: session
+                              .state.lastInteractionResponse!.llmGateStatus),
                       _InfoRow(
                         label: 'Gating Verdict',
-                        value: sharedState['gate_open'] == true ? 'OPEN' : 'CLOSED',
-                        valueColor: sharedState['gate_open'] == true ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                        value: sharedState['gate_open'] == true
+                            ? 'OPEN'
+                            : 'CLOSED',
+                        valueColor: sharedState['gate_open'] == true
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
                       ),
-                      _InfoRow(label: 'Gating reason', value: sharedState['gate_reason']?.toString() ?? 'N/A'),
+                      _InfoRow(
+                          label: 'Gating reason',
+                          value:
+                              sharedState['gate_reason']?.toString() ?? 'N/A'),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -229,14 +287,16 @@ class EngineInspectorScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppTheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppTheme.primary.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppTheme.primary.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.chat_bubble_outline_rounded, color: AppTheme.primary, size: 20),
+                            Icon(Icons.chat_bubble_outline_rounded,
+                                color: AppTheme.primary, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'Live Generating Dialogues',
@@ -255,16 +315,22 @@ class EngineInspectorScreen extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppTheme.surfaceVariant,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.outline.withValues(alpha: 0.2)),
+                            border: Border.all(
+                                color: AppTheme.outline.withValues(alpha: 0.2)),
                           ),
                           child: Text(
-                            session.state.lastInteractionResponse!.lastUtterance.isNotEmpty
-                                ? session.state.lastInteractionResponse!.lastUtterance
+                            session.state.lastInteractionResponse!.lastUtterance
+                                    .isNotEmpty
+                                ? session.state.lastInteractionResponse!
+                                    .lastUtterance
                                 : 'Awaiting input...',
                             style: TextStyle(
                               color: AppTheme.onSurface,
                               fontSize: 14,
-                              fontStyle: session.state.lastInteractionResponse!.lastUtterance.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                              fontStyle: session.state.lastInteractionResponse!
+                                      .lastUtterance.isNotEmpty
+                                  ? FontStyle.normal
+                                  : FontStyle.italic,
                             ),
                           ),
                         ),
@@ -274,7 +340,7 @@ class EngineInspectorScreen extends StatelessWidget {
                 ],
               ],
             ),
- 
+
             // Ecom Tab
             _InspectorTab(
               name: 'Action Hub Subsystem',
@@ -289,7 +355,7 @@ class EngineInspectorScreen extends StatelessWidget {
                 ActionHubTab(actionHubResult: session.state.actionHubResult),
               ],
             ),
- 
+
             // Memory Tab
             _InspectorTab(
               name: 'Safety Memory Subsystem',
@@ -305,8 +371,12 @@ class EngineInspectorScreen extends StatelessWidget {
                   _InfoPanel(
                     title: 'Recalled Safety Memories',
                     children: [
-                      _InfoRow(label: 'Recall status', value: session.state.lastMemoryResponse!.status),
-                      _InfoRow(label: 'Data recalled', value: session.state.lastMemoryResponse!.recallData),
+                      _InfoRow(
+                          label: 'Recall status',
+                          value: session.state.lastMemoryResponse!.status),
+                      _InfoRow(
+                          label: 'Data recalled',
+                          value: session.state.lastMemoryResponse!.recallData),
                     ],
                   ),
                 ],
@@ -402,7 +472,8 @@ class EngineStatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surfaceVariant,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withValues(alpha: 0.2), width: 1.5),
+        border:
+            Border.all(color: statusColor.withValues(alpha: 0.2), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: statusColor.withValues(alpha: 0.05),
@@ -419,17 +490,22 @@ class EngineStatusCard extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   statusLabel,
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.w700, fontSize: 10),
+                  style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 10),
                 ),
               ),
             ],
@@ -437,22 +513,27 @@ class EngineStatusCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Icon(Icons.timer_outlined, size: 16, color: AppTheme.onSurfaceVariant),
+              Icon(Icons.timer_outlined,
+                  size: 16, color: AppTheme.onSurfaceVariant),
               const SizedBox(width: 6),
               Text(
                 'Latency: ',
-                style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                style:
+                    TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
               ),
               Text(
                 '${latencyMs.toStringAsFixed(1)} ms',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
               ),
               const Spacer(),
-              Icon(Icons.settings_suggest_outlined, size: 16, color: AppTheme.onSurfaceVariant),
+              Icon(Icons.settings_suggest_outlined,
+                  size: 16, color: AppTheme.onSurfaceVariant),
               const SizedBox(width: 6),
               Text(
                 'Mode: ',
-                style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                style:
+                    TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
               ),
               Text(
                 isMock ? 'Mock Fallback' : 'Real Deployment',
@@ -471,7 +552,8 @@ class EngineStatusCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 16, color: Color(0xFFEF4444)),
+                const Icon(Icons.error_outline_rounded,
+                    size: 16, color: Color(0xFFEF4444)),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
@@ -525,10 +607,13 @@ class _JsonViewerState extends State<JsonViewer> {
           ListTile(
             title: Text(
               widget.title,
-              style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             trailing: IconButton(
-              icon: Icon(_expanded ? Icons.expand_less_rounded : Icons.expand_more_rounded),
+              icon: Icon(_expanded
+                  ? Icons.expand_less_rounded
+                  : Icons.expand_more_rounded),
               onPressed: () => setState(() => _expanded = !_expanded),
             ),
             onTap: () => setState(() => _expanded = !_expanded),
@@ -611,7 +696,10 @@ class _InfoRow extends StatelessWidget {
             flex: 3,
             child: Text(
               label,
-              style: TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                  color: AppTheme.onSurfaceVariant,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500),
             ),
           ),
           Expanded(

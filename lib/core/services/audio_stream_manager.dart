@@ -134,17 +134,17 @@ class AudioStreamManager {
         }
       }
     }, onError: (err) {
-      debugPrint('[AudioStreamManager] Mic stream error: $err. Restarting...');
+      debugPrint('[AudioStreamManager] Mic stream error: $err. Instantly restarting...');
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(seconds: 1), startVad);
+      Future.delayed(const Duration(milliseconds: 50), startVad);
     }, onDone: () {
-      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly. Restarting...');
+      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly. Instantly restarting to prevent audio drop...');
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(seconds: 1), startVad);
+      Future.delayed(const Duration(milliseconds: 50), startVad);
     });
   }
 
@@ -216,6 +216,7 @@ class AudioStreamManager {
       _channel!.stream.listen(
         (message) async {
           if (message is List<int> || message is Uint8List) {
+            debugPrint('[AudioStreamManager] Received binary audio chunk of size: ${(message as List).length} bytes');
             // Wait for any in-progress stop to clear before starting playback
             while (_isStopping) {
               await Future.delayed(const Duration(milliseconds: 5));
@@ -297,10 +298,11 @@ class AudioStreamManager {
   }
 
   void _safeSinkAdd(dynamic data) {
-    if (_channel == null) return;
+    if (_channel == null || _channel!.closeCode != null) return;
     try {
       _channel!.sink.add(data);
     } catch (e) {
+      if (e.toString().contains('Cannot add event after closing')) return;
       debugPrint('[AudioStreamManager] sink.add error: $e');
     }
   }

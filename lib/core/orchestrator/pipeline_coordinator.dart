@@ -71,7 +71,6 @@ class PipelineCoordinator {
     final imgLen = input.imageBytes?.length ?? 0;
     final lat = input.latitude ?? 0.0;
     final lon = input.longitude ?? 0.0;
-    final audioLevel = 0.0; // Input audioLevel removed for now
 
     print('============================================================');
     print('[PIPELINE RUN] STARTING PIPELINE');
@@ -80,7 +79,6 @@ class PipelineCoordinator {
     print('  - Input details:');
     print('    * Image frame: $imgLen bytes');
     print('    * GPS Location: Latitude $lat, Longitude $lon');
-    print('    * Audio first sample: $audioLevel');
     print('------------------------------------------------------------');
 
     // 1. Run Context Step

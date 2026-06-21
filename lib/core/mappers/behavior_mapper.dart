@@ -15,7 +15,10 @@ class BehaviorMapper {
     switch (stateStr.toLowerCase()) {
       case 'passive_observation':
       case 'passiveobservation':
-        return BehavioralState.passiveObservation;
+      case 'passive_browsing':
+      case 'passivebrowsing':
+      case 'passive':
+        return BehavioralState.passiveBrowsing;
       case 'product_interest':
       case 'productinterest':
         return BehavioralState.productInterest;

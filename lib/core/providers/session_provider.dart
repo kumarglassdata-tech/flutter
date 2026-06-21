@@ -465,25 +465,22 @@ class SessionProvider extends ChangeNotifier {
         _lastSpokenUtterance = interactionResponse.lastUtterance;
       }
 
-      // Force update lastBIEFrame so the E-com UI and pipeline can see the new salience score if BCP is present
       final bcpJson = statusData['bcp'] ?? <String, dynamic>{};
       if (bcpJson.isNotEmpty) {
         final audioBieFrame = BIEFrame.fromJson(bcpJson);
         _state = _state.copyWith(lastBIEFrame: audioBieFrame);
         
-        if (audioBieFrame.salienceScore >= 0.5) {
-          _addLog('Audio intent triggered Ecom. Salience: ${audioBieFrame.salienceScore}');
-          final sharedState = <String, dynamic>{};
-          pipelineCoordinator.ecomStep.execute(audioBieFrame, sharedState).then((ecomRes) {
-            if (ecomRes.isSuccess && ecomRes.output != null) {
-               _state = _state.copyWith(
-                 lastEcomResponse: ecomRes.output,
-                 suggestedProducts: ecomRes.output!.suggestions,
-               );
-               notifyListeners();
-            }
-          });
-        }
+        _addLog('Audio intent triggered Ecom unconditionally (delegating to backend).');
+        final sharedState = <String, dynamic>{};
+        pipelineCoordinator.ecomStep.execute(audioBieFrame, sharedState).then((ecomRes) {
+          if (ecomRes.isSuccess && ecomRes.output != null) {
+              _state = _state.copyWith(
+                lastEcomResponse: ecomRes.output,
+                suggestedProducts: ecomRes.output!.suggestions,
+              );
+              notifyListeners();
+          }
+        });
       }
       notifyListeners();
     });
@@ -779,10 +776,27 @@ class SessionProvider extends ChangeNotifier {
 
   Future<void> stopRuntime() async {
     _addLog('Stopping real-time stream coordinator...');
-    await _cameraService.stopStreaming();
-    await audioStreamManager.stopVad();
-    await audioStreamManager.disconnect();
-    streamCoordinator.stop();
+    try {
+      await _cameraService.stopStreaming().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('Error stopping camera: $e');
+    }
+    try {
+      await audioStreamManager.stopVad().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('Error stopping VAD: $e');
+    }
+    try {
+      await audioStreamManager.disconnect().timeout(const Duration(seconds: 2));
+    } catch (e) {
+      debugPrint('Error disconnecting audio WS: $e');
+    }
+    try {
+      streamCoordinator.stop();
+    } catch (e) {
+      debugPrint('Error stopping stream coordinator: $e');
+    }
+
     _state = _state.copyWith(
       isSessionActive: false,
       mediaState: EngineState.idle,

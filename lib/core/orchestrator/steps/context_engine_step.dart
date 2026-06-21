@@ -16,9 +16,7 @@ class ContextEngineStep extends PipelineStep<UnifiedInput, ContextEngineOutput> 
     UnifiedInput input,
     Map<String, dynamic> sharedState,
   ) async {
-
     final imageBytes = input.imageBytes ?? Uint8List(0);
-    final audioLevel = 0.0; // No easy way to get audio level from bytes directly here without decoding
     final lat = input.latitude ?? 0.0;
     final lon = input.longitude ?? 0.0;
 

@@ -33,24 +33,21 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late TabController _tabController;
-  int _tabCount = 1;
+  late int _tabCount;
 
   SessionState? _previousState;
 
   @override
   void initState() {
     super.initState();
+    final auth = context.read<AuthProvider>();
+    _tabCount = auth.isAdmin ? 5 : 2;
     _tabController = TabController(length: _tabCount, vsync: this);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        final auth = context.read<AuthProvider>();
-        setState(() {
-          _tabCount = auth.isAdmin ? 5 : 2;
-          _tabController = TabController(length: _tabCount, vsync: this);
-        });
-
         final settings = context.read<SettingsProvider>();
         final session = context.read<SessionProvider>();
         session.cameraService.initialize(
@@ -60,6 +57,19 @@ class _DashboardScreenState extends State<DashboardScreen>
             );
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.watch<AuthProvider>();
+    final newTabCount = auth.isAdmin ? 5 : 2;
+    if (newTabCount != _tabCount) {
+      _tabCount = newTabCount;
+      final oldController = _tabController;
+      _tabController = TabController(length: _tabCount, vsync: this);
+      Future.microtask(() => oldController.dispose());
+    }
   }
 
   @override

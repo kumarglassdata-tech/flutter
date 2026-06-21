@@ -11,34 +11,17 @@ class GateCheckStep extends PipelineStep<BIEFrame, bool> {
     Map<String, dynamic> sharedState,
   ) async {
     try {
-      final score = input.salienceScore;
-
-      // Respect the BE's own gate_open signal if present — it has more context
-      final beGateOpen = input.raw['gate_open'] as bool?;
-      final suppressReason = input.raw['suppress_reason']?.toString();
-
-      GateDecision decision;
-
-      final isGateOpen = beGateOpen ?? (score >= 0.75);
-      final isEcomOpen = score >= 0.85;
-
-      decision = GateDecision(
-        shouldInteract: isGateOpen,
-        shouldRunEcom: isEcomOpen,
+      GateDecision decision = GateDecision(
+        shouldInteract: true,
+        shouldRunEcom: true,
         shouldPersistMemory: true, // Memory runs passively
-        relevanceScore: score,
-        reason: beGateOpen != null 
-          ? 'BE explicitly set gate_open=$beGateOpen. (Reason: ${suppressReason ?? 'none'})'
-          : 'Fallback threshold used. Score: $score (>=0.75 ? $isGateOpen)',
+        relevanceScore: input.salienceScore,
+        reason: 'Gate bypassed - Backend now handles interaction logic.',
       );
 
       sharedState['gate_decision'] = decision;
       sharedState['gate_reason'] = decision.reason;
       sharedState['gate_open'] = decision.shouldInteract;
-
-      if (!decision.shouldInteract) {
-        return PipelineResult.success(false); // Valid completion, just returned false
-      }
 
       return PipelineResult.success(true);
     } catch (e) {
@@ -46,3 +29,4 @@ class GateCheckStep extends PipelineStep<BIEFrame, bool> {
     }
   }
 }
+

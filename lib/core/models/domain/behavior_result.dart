@@ -1,5 +1,5 @@
 enum BehavioralState {
-  passiveObservation,
+  passiveBrowsing,
   productInterest,
   comparison,
   purchaseConsideration,

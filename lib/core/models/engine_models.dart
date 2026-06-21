@@ -17,17 +17,31 @@ class ContextEngineOutput {
     // Scene Context
     var scene = json['scene_understanding']?['label'];
     if (scene == null) {
-      final sceneVal = json['scene'] ?? json['scene_context'] ?? json['gps_response']?['hazard_detection']?['zone_name'] ?? 'unknown';
-      scene = sceneVal is Map ? (sceneVal['scene_label'] ?? 'unknown') : sceneVal.toString();
+      final sceneVal = json['scene'] ??
+          json['scene_context'] ??
+          json['gps_response']?['hazard_detection']?['zone_name'] ??
+          'unknown';
+      scene = sceneVal is Map
+          ? (sceneVal['scene_label'] ?? 'unknown')
+          : sceneVal.toString();
     }
 
     // Tracked Objects
     final List<String> objects = [];
-    final rawObjects = json['scene_objects'] ?? json['results']?['vision']?['objects'] ?? json['detected_objects'] ?? json['tracked_objects'];
+    final rawObjects = json['scene_objects'] ??
+        json['results']?['vision']?['objects'] ??
+        json['detected_objects'] ??
+        json['tracked_objects'];
     if (rawObjects is List) {
       for (var item in rawObjects) {
         if (item is Map) {
-          objects.add((item['class_name'] ?? item['class'] ?? item['label'] ?? item['name'] ?? item['object_name'] ?? '').toString());
+          objects.add((item['class_name'] ??
+                  item['class'] ??
+                  item['label'] ??
+                  item['name'] ??
+                  item['object_name'] ??
+                  '')
+              .toString());
         } else {
           objects.add(item.toString());
         }
@@ -45,7 +59,12 @@ class ContextEngineOutput {
     if (rawSalient is List) {
       for (var item in rawSalient) {
         if (item is Map) {
-          salient.add((item['class'] ?? item['label'] ?? item['class_name'] ?? item['object_id'] ?? '').toString());
+          salient.add((item['class'] ??
+                  item['label'] ??
+                  item['class_name'] ??
+                  item['object_id'] ??
+                  '')
+              .toString());
         } else {
           salient.add(item.toString());
         }
@@ -90,9 +109,7 @@ class ContextEngineOutput {
           "confidence": 0.94
         }
       ],
-      "product_salience": {
-        "102": 0.925
-      },
+      "product_salience": {"102": 0.925},
       "attention_grounding": {
         "attention_target": "organic_milk_1l",
         "attention_confidence": 0.91
@@ -102,14 +119,8 @@ class ContextEngineOutput {
         "object_id": 102,
         "confidence": 0.89
       },
-      "shelf_reach_events": {
-        "reach_detected": true,
-        "confidence": 0.87
-      },
-      "motion_state": {
-        "movement_type": "standing",
-        "motion_stability": 0.95
-      },
+      "shelf_reach_events": {"reach_detected": true, "confidence": 0.87},
+      "motion_state": {"movement_type": "standing", "motion_stability": 0.95},
       "transition_events": {
         "from_object_id": 0,
         "to_object_id": 102,
@@ -131,11 +142,12 @@ class ContextEngineOutput {
 }
 
 class BIEFrame {
-  final String behavioralState;   // e.g. "product_interest", "comparison"
-  final double stateConfidence;   // confidence in the behavioral state classification
+  final String behavioralState; // e.g. "product_interest", "comparison"
+  final double
+      stateConfidence; // confidence in the behavioral state classification
   final String gazeTarget;
-  final double salienceScore;     // relevance_score from BE — drives the gate
-  final double intentScore;       // computed commerce intent score from BCPPayload
+  final double salienceScore; // relevance_score from BE — drives the gate
+  final double intentScore; // computed commerce intent score from BCPPayload
   final Map<String, dynamic> raw;
 
   // keep legacy getters so nothing else breaks
@@ -151,11 +163,18 @@ class BIEFrame {
     required this.raw,
   });
 
-  factory BIEFrame.fromJson(Map<String, dynamic> json, {String? defaultGazeTarget}) {
-    final behavioralState = (json['behavioral_state'] ?? json['intent'] ?? json['voice_nlu']?['active_intent'] ?? 'unknown').toString();
-    final stateConfidence = (json['state_confidence'] ?? json['confidence'] ?? 0.0).toDouble();
+  factory BIEFrame.fromJson(Map<String, dynamic> json,
+      {String? defaultGazeTarget}) {
+    final behavioralState = (json['behavioral_state'] ??
+            json['intent'] ??
+            json['voice_nlu']?['active_intent'] ??
+            'unknown')
+        .toString();
+    final stateConfidence =
+        (json['state_confidence'] ?? json['confidence'] ?? 0.0).toDouble();
 
-    var gazeTarget = json['gaze_grounding']?['grounded_target']?.toString() ?? 'unknown';
+    var gazeTarget =
+        json['gaze_grounding']?['grounded_target']?.toString() ?? 'unknown';
     if (gazeTarget == 'unknown') {
       final salient = json['top_salient_objects'];
       if (salient is List && salient.isNotEmpty) {
@@ -174,25 +193,8 @@ class BIEFrame {
       }
     }
 
-    // Compute commerce intent score from intent_probs
-    final intentProbs = (json['intent_probs'] ?? json['state_probabilities']) as Map<String, dynamic>? ?? {};
-    double commerceScore = 0.0;
-    if (intentProbs.isNotEmpty) {
-      commerceScore =
-          (intentProbs['product_comparison'] ?? 0.0).toDouble() +
-          (intentProbs['purchase_consideration'] ?? 0.0).toDouble() +
-          (intentProbs['assistance_seeking'] ?? 0.0).toDouble();
-    } else {
-      if (behavioralState == 'product_comparison' ||
-          behavioralState == 'purchase_consideration' ||
-          behavioralState == 'assistance_seeking') {
-        commerceScore = stateConfidence;
-      }
-    }
-    final entropy = (json['entropy'] ?? 0.0).toDouble();
-    final hesitation = (json['hesitation_score'] ?? 0.0).toDouble();
-    final hMin = entropy > 1.6 ? 1.6 : entropy;
-    final intentScore = (0.5 * commerceScore) + (0.3 * (1.0 - (hMin / 1.6))) + (0.2 * hesitation);
+    // No more local edge calculations - trust the backend
+    final intentScore = salience;
 
     return BIEFrame(
       behavioralState: behavioralState,
@@ -219,7 +221,12 @@ class BIEFrame {
         "spatial_proximity_px": 42.5
       },
       "interaction_primitives": {
-        "pickup": {"active": true, "object_id": 102, "displacement_px": 125.0, "class_name": "organic_milk_1l"},
+        "pickup": {
+          "active": true,
+          "object_id": 102,
+          "displacement_px": 125.0,
+          "class_name": "organic_milk_1l"
+        },
         "product_rotation": {"active": true, "aspect_ratio_variance": 0.18},
         "shelf_reach": {"active": false, "arm_y": 0.0},
         "product_comparison": {"active": false, "compared_items": []}
@@ -271,26 +278,11 @@ class BCPPayload {
     final entropy = (json['entropy'] ?? 0.0).toDouble();
     final hesitationScore = (json['hesitation_score'] ?? 0.0).toDouble();
     final stateConfidence = (json['state_confidence'] ?? 0.0).toDouble();
-    final stateProbabilities = (json['state_probabilities'] ?? json['intent_probs']) as Map<String, dynamic>? ?? {};
+    final stateProbabilities = (json['state_probabilities'] ??
+            json['intent_probs']) as Map<String, dynamic>? ??
+        {};
 
-    // Calculate commerce score
-    double commerceScore = 0.0;
-    if (stateProbabilities.isNotEmpty) {
-      commerceScore = (stateProbabilities['product_comparison'] ?? 0.0).toDouble() +
-          (stateProbabilities['purchase_consideration'] ?? 0.0).toDouble() +
-          (stateProbabilities['assistance_seeking'] ?? 0.0).toDouble();
-    } else {
-      // Fallback if full probabilities aren't provided
-      final state = json['behavioral_state'] ?? 'idle';
-      if (state == 'product_comparison' || state == 'purchase_consideration' || state == 'assistance_seeking') {
-        commerceScore = stateConfidence;
-      }
-    }
-
-    // Intent score formula: 0.5 * commerce_score + 0.3 * (1 - min(H, 1.6) / 1.6) + 0.2 * hesitation_score
-    final hMin = entropy > 1.6 ? 1.6 : entropy;
-    final intentScore = (0.5 * commerceScore) + (0.3 * (1.0 - (hMin / 1.6))) + (0.2 * hesitationScore);
-
+    final intentScore = (json['relevance_score'] ?? 0.0).toDouble();
     return BCPPayload(
       relevanceScore: (json['relevance_score'] ?? intentScore).toDouble(),
       gateOpen: json['gate_open'] ?? false,
@@ -323,8 +315,9 @@ class InteractionResponse {
 
   factory InteractionResponse.fromJson(Map<String, dynamic> json) {
     final voiceNlu = json['voice_assistant_response'] ?? json['voice_nlu'];
-    final dialogueMode = json['dialogue_mode'] ?? (voiceNlu is Map ? (voiceNlu['intent'] ?? 'chat') : 'chat');
-    
+    final dialogueMode = json['dialogue_mode'] ??
+        (voiceNlu is Map ? (voiceNlu['intent'] ?? 'chat') : 'chat');
+
     String utterance = '';
     final dialogueState = json['dialogue_state'];
     if (dialogueState is Map && dialogueState['last_utterance'] != null) {
@@ -335,7 +328,10 @@ class InteractionResponse {
       utterance = voiceNlu['generated_response'].toString();
     }
 
-    final llmGateStatus = json['llm_gate_status'] ?? ((voiceNlu is Map && voiceNlu['generated_response'] != null) ? 'open' : 'closed');
+    final llmGateStatus = json['llm_gate_status'] ??
+        ((voiceNlu is Map && voiceNlu['generated_response'] != null)
+            ? 'open'
+            : 'closed');
     return InteractionResponse(
       dialogueMode: dialogueMode,
       lastUtterance: utterance,
@@ -351,7 +347,8 @@ class InteractionResponse {
   factory InteractionResponse.mock() {
     final mockRaw = {
       "dialogue_mode": "recommendation_eligible -> RECOMMENDATION",
-      "last_utterance": "That organic_milk_1l is highly rated! Would you like to check details?",
+      "last_utterance":
+          "That organic_milk_1l is highly rated! Would you like to check details?",
       "llm_gate_status": "BYPASSED",
       "escalation_eligibility": true,
       "compute_pressure": 0.0,
@@ -362,7 +359,11 @@ class InteractionResponse {
         "state_confidence": 0.8452,
         "entropy": 0.4215,
         "top_salient_objects": [
-          { "object_id": 102, "class_name": "organic_milk_1l", "salience_score": 0.925 }
+          {
+            "object_id": 102,
+            "class_name": "organic_milk_1l",
+            "salience_score": 0.925
+          }
         ],
         "hesitation_score": 0.75,
         "comparison_detected": false,
@@ -373,14 +374,17 @@ class InteractionResponse {
         "primary_object_revisit_n": 2,
         "gate_open": true,
         "suppress_reason": null,
-        "degraded_flags": { "gaze": false, "hand": false, "tracking": false },
+        "degraded_flags": {"gaze": false, "hand": false, "tracking": false},
         "emitted": true,
         "cpu_temp": 32.0,
         "throttled": false,
         "voice_nlu": {
           "rhino_active": true,
           "active_intent": "queryProduct",
-          "slots": { "user_query": "is this healthy", "product_name": "organic_milk_1l" }
+          "slots": {
+            "user_query": "is this healthy",
+            "product_name": "organic_milk_1l"
+          }
         }
       }
     };
@@ -393,12 +397,24 @@ class EcomAdProduct {
   final String name;
   final double price;
   final String imageUrl;
+  final String? delivery;
+  final double? rating;
+  final String? offer;
+  final String? platform;
+  final String? category;
+  final double? finalScore;
 
   EcomAdProduct({
     required this.id,
     required this.name,
     required this.price,
     required this.imageUrl,
+    this.delivery,
+    this.rating,
+    this.offer,
+    this.platform,
+    this.category,
+    this.finalScore,
   });
 
   factory EcomAdProduct.fromJson(Map<String, dynamic> json) {
@@ -409,25 +425,35 @@ class EcomAdProduct {
       if (json['price'] is num) {
         parsedPrice = (json['price'] as num).toDouble();
       } else if (json['price'] is String) {
-        final cleaned = (json['price'] as String).replaceAll(RegExp(r'[^\d.]'), '');
+        final cleaned =
+            (json['price'] as String).replaceAll(RegExp(r'[^\d.]'), '');
         parsedPrice = double.tryParse(cleaned) ?? 0.0;
       }
     }
 
-    var idVal = json['id']?.toString() ?? json['link']?.toString() ?? json['action_link']?.toString() ?? '';
+    var idVal = json['id']?.toString() ??
+        json['product_url']?.toString() ??
+        json['url']?.toString() ??
+        json['redirect_url']?.toString() ??
+        json['redirect']?.toString() ??
+        json['link']?.toString() ??
+        json['action_link']?.toString() ??
+        '';
     if (idVal.contains('url=')) {
       try {
         final uri = Uri.parse(idVal);
-        final directUrl = uri.queryParameters['url'];
+        final directUrl = uri.queryParameters['url'] ??
+            uri.queryParameters['redirect'] ??
+            uri.queryParameters['target'];
         if (directUrl != null && directUrl.isNotEmpty) {
           idVal = directUrl;
         }
       } catch (_) {}
-    } 
+    }
 
     if (idVal.isNotEmpty && !idVal.startsWith('http')) {
-      final base = EnvConfig.actionHubBuyUrl.endsWith('/buy') 
-          ? EnvConfig.actionHubBuyUrl.replaceAll('/buy', '') 
+      final base = EnvConfig.actionHubBuyUrl.endsWith('/buy')
+          ? EnvConfig.actionHubBuyUrl.replaceAll('/buy', '')
           : EnvConfig.actionHubBuyUrl;
       if (idVal.startsWith('/')) {
         idVal = '$base$idVal';
@@ -436,7 +462,7 @@ class EcomAdProduct {
       } else if (idVal.startsWith('buy/')) {
         idVal = '$base/$idVal';
       } else {
-        idVal = '$base/buy/$idVal'; 
+        idVal = '$base/buy/$idVal';
       }
     }
 
@@ -445,10 +471,21 @@ class EcomAdProduct {
       name: json['title']?.toString() ??
           json['name']?.toString() ??
           json['product']?.toString() ??
-          json['platform']?.toString() ??
-          '',
+          json['product_name']?.toString() ??
+          json['label']?.toString() ??
+          (idVal.isNotEmpty ? 'Product link' : ''),
       price: parsedPrice,
-      imageUrl: json['image_url']?.toString() ?? json['image']?.toString() ?? '',
+      imageUrl: json['image_url']?.toString() ??
+          json['image']?.toString() ??
+          json['thumbnail']?.toString() ??
+          json['thumbnail_url']?.toString() ??
+          '',
+      delivery: json['delivery']?.toString(),
+      rating: (json['rating'] as num?)?.toDouble(),
+      offer: json['offer']?.toString(),
+      platform: json['platform']?.toString(),
+      category: json['category']?.toString(),
+      finalScore: (json['final_score'] as num?)?.toDouble(),
     );
   }
 
@@ -458,46 +495,185 @@ class EcomAdProduct {
       'name': name,
       'price_val': price,
       'image_url': imageUrl,
+      'delivery': delivery,
+      'rating': rating,
+      'offer': offer,
+      'platform': platform,
+      'category': category,
+      'final_score': finalScore,
     };
+  }
+}
+
+class PlatformAnalytics {
+  final String platform;
+  final String adSpend;
+  final int clicks;
+  final String ctr;
+  final int impressions;
+  final String revenue;
+  final String roas;
+  final String roi;
+
+  PlatformAnalytics({
+    required this.platform,
+    required this.adSpend,
+    required this.clicks,
+    required this.ctr,
+    required this.impressions,
+    required this.revenue,
+    required this.roas,
+    required this.roi,
+  });
+
+  factory PlatformAnalytics.fromJson(String platform, Map<String, dynamic> json) {
+    return PlatformAnalytics(
+      platform: platform,
+      adSpend: json['ad_spend']?.toString() ?? '₹0.00',
+      clicks: json['clicks'] ?? 0,
+      ctr: json['ctr']?.toString() ?? '0.0%',
+      impressions: json['impressions'] ?? 0,
+      revenue: json['revenue']?.toString() ?? '₹0.00',
+      roas: json['roas']?.toString() ?? '0.00x',
+      roi: json['roi']?.toString() ?? '0.0%',
+    );
+  }
+}
+
+class AnalyzeResponse {
+  final List<PlatformAnalytics> platforms;
+  final int suppressions;
+
+  AnalyzeResponse({required this.platforms, required this.suppressions});
+
+  factory AnalyzeResponse.fromJson(Map<String, dynamic> json) {
+    final platformsJson = json['platforms'] as Map<String, dynamic>? ?? {};
+    final platformsList = platformsJson.entries.map((e) => PlatformAnalytics.fromJson(e.key, e.value)).toList();
+    return AnalyzeResponse(
+      platforms: platformsList,
+      suppressions: json['suppressions'] ?? 0,
+    );
+  }
+}
+
+class LifeBalanceResponse {
+  final int score;
+  final Map<String, double> breakdown;
+  final List<String> categories;
+  final List<double> actualData;
+  final List<double> recommendedData;
+  final String primaryNotification;
+
+  LifeBalanceResponse({
+    required this.score,
+    required this.breakdown,
+    required this.categories,
+    required this.actualData,
+    required this.recommendedData,
+    required this.primaryNotification,
+  });
+
+  factory LifeBalanceResponse.fromJson(Map<String, dynamic> json) {
+    final bd = json['breakdown'] as Map<String, dynamic>? ?? {};
+    final breakdownMap = bd.map((k, v) => MapEntry(k, double.tryParse(v.toString().replaceAll('%', '')) ?? 0.0));
+    
+    final chartData = json['chart_data'] as Map<String, dynamic>? ?? {};
+    final categories = (chartData['categories'] as List?)?.map((e) => e.toString()).toList() ?? [];
+    final actual = (chartData['actual'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [];
+    final recommended = (chartData['recommended'] as List?)?.map((e) => (e as num).toDouble()).toList() ?? [];
+
+    final notifs = json['notifications'] as List? ?? [];
+    String notification = "Great job maintaining a healthy life balance!";
+    if (notifs.isNotEmpty && notifs.first is Map) {
+      notification = notifs.first['message']?.toString() ?? notification;
+    }
+
+    return LifeBalanceResponse(
+      score: json['life_balance_score'] ?? 0,
+      breakdown: breakdownMap,
+      categories: categories,
+      actualData: actual,
+      recommendedData: recommended,
+      primaryNotification: notification,
+    );
   }
 }
 
 class EcomAdResponse {
   final String status;
   final List<EcomAdProduct> suggestions;
+  final AnalyzeResponse? analyzeData;
+  final LifeBalanceResponse? lifeBalanceData;
   final Map<String, dynamic> raw;
 
   EcomAdResponse({
     required this.status,
     required this.suggestions,
+    this.analyzeData,
+    this.lifeBalanceData,
     required this.raw,
   });
 
   factory EcomAdResponse.fromJson(Map<String, dynamic> json) {
     final parsed = <EcomAdProduct>[];
-    
+
     if (json['ad_content'] != null) {
       final ad = json['ad_content'] as Map<String, dynamic>;
       parsed.add(EcomAdProduct.fromJson(ad));
     }
 
-    final list = json['suggestions'] ?? json['recommendations'] ?? json['comparison_data'] ?? json['mall_feed'] ?? [];
-    for (final item in (list as List)) {
-      final map = item as Map<String, dynamic>;
-      final product = EcomAdProduct.fromJson(map);
-      if (!parsed.any((p) => p.id == product.id)) {
-        parsed.add(product);
+    final list = json['suggestions'] ??
+        json['recommendations'] ??
+        json['products'] ??
+        json['product_links'] ??
+        json['links'] ??
+        json['buy_links'] ??
+        json['comparison_data'] ??
+        json['mall_feed'] ??
+        [];
+    if (list is List) {
+      for (final item in list) {
+        final map = item is Map<String, dynamic>
+            ? item
+            : item is Map
+                ? Map<String, dynamic>.from(item)
+                : {'link': item.toString()};
+        final product = EcomAdProduct.fromJson(map);
+        if (!parsed.any((p) => p.id == product.id)) {
+          parsed.add(product);
+        }
       }
     }
 
     // Fallback: if it's a flat Action Hub payload
-    if (parsed.isEmpty && (json.containsKey('product_url') || json.containsKey('link') || json.containsKey('url') || json.containsKey('image_url') || json.containsKey('image'))) {
+    if (parsed.isEmpty &&
+        (json.containsKey('product_url') ||
+            json.containsKey('link') ||
+            json.containsKey('url') ||
+            json.containsKey('redirect_url') ||
+            json.containsKey('redirect') ||
+            json.containsKey('action_link') ||
+            json.containsKey('image_url') ||
+            json.containsKey('image'))) {
       parsed.add(EcomAdProduct.fromJson(json));
+    }
+    
+    // Attempt to parse nested analyze and lifebalance if they were injected by the client
+    AnalyzeResponse? analyze;
+    if (json.containsKey('analyze_response')) {
+      analyze = AnalyzeResponse.fromJson(json['analyze_response']);
+    }
+    
+    LifeBalanceResponse? lifeBalance;
+    if (json.containsKey('lifebalance_response')) {
+      lifeBalance = LifeBalanceResponse.fromJson(json['lifebalance_response']);
     }
 
     return EcomAdResponse(
       status: json['status']?.toString() ?? 'success',
       suggestions: parsed,
+      analyzeData: analyze,
+      lifeBalanceData: lifeBalance,
       raw: json,
     );
   }
@@ -505,10 +681,7 @@ class EcomAdResponse {
   Map<String, dynamic> toJson() => raw;
 
   factory EcomAdResponse.mock() {
-    final mockRaw = {
-      "status": "success",
-      "suggestions": []
-    };
+    final mockRaw = {"status": "success", "suggestions": []};
     return EcomAdResponse.fromJson(mockRaw);
   }
 }
@@ -526,7 +699,9 @@ class MemoryResponse {
 
   factory MemoryResponse.fromJson(Map<String, dynamic> json) {
     var recallText = '';
-    final memories = json['semantic_memories'] ?? json['memories'] ?? (json['memory_response'] as Map?)?['semantic_memories'];
+    final memories = json['semantic_memories'] ??
+        json['memories'] ??
+        (json['memory_response'] as Map?)?['semantic_memories'];
     if (memories is List) {
       recallText = memories.map((m) {
         if (m is Map) {
@@ -535,7 +710,8 @@ class MemoryResponse {
         return m.toString();
       }).join(', ');
     } else if (memories is Map) {
-      recallText = "${memories['memory_type'] ?? memories['type'] ?? ''}: ${memories['content'] ?? memories['text'] ?? ''}";
+      recallText =
+          "${memories['memory_type'] ?? memories['type'] ?? ''}: ${memories['content'] ?? memories['text'] ?? ''}";
     } else {
       recallText = (json['recall_data'] ?? json['data'] ?? '').toString();
     }

@@ -1,0 +1,1089 @@
+Launching lib\main.dart on RMX3998 in release mode...
+Running Gradle task 'assembleRelease'...                        
+I/flutter ( 8785): [IMPORTANT:flutter/shell/platform/android/android_context_vk_impeller.cc(62)] Using the Impeller rendering backend (Vulkan).
+D/FlutterGeolocator( 8785): Creating service.
+D/FlutterGeolocator( 8785): Binding to location service.
+D/FlutterGeolocator( 8785): Flutter engine connected. Connected engine count 1
+I/flutter ( 8785): [PCM] invoke: setup {sample_rate: 16000, num_channels: 1, ios_audio_category: playback, ios_allow_background_audio: false}
+I/flutter ( 8785): SessionProvider: Always-Listening mode activated.
+I/flutter ( 8785): [VAD] Speech started (rms=0.0525)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0369)
+I/flutter ( 8785): SessionProvider: Starting real-time stream coordinator...
+I/flutter ( 8785): SessionProvider: Real-time ingestion pipeline running. VAD listening.
+E/FlutterGeolocator( 8785): Geolocator position updates started
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:40.893312
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67539 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 524ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67539 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779180817,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.1,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 602ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779180817,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.1,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779180817,"behavioral_state":"passive_browsing","state_confidence":0.9235,"intent_probs":{"passive_browsing":0.9235,"product_interest":0.0204,"comparison":0.0059,"purchase_consideration":0.0035,"assistance_seeking":0.0466},"entropy":0.346,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1168ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779180817,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:43.188079
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67044 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 514ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67044 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779183126,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.4,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 98ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779183126,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.4,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779183126,"behavioral_state":"passive_browsing","state_confidence":0.9681,"intent_probs":{"passive_browsing":0.9681,"product_interest":0.0082,"comparison":0.0024,"purchase_consideration":0.0016,"assistance_seeking":0.0197},"entropy":0.1731,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 729ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779183126,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:44.891431
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66661 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 925ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66661 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779185213,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.3,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 55ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779185213,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.3,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779185213,"behavioral_state":"passive_browsing","state_confidence":0.9869,"intent_probs":{"passive_browsing":0.9869,"product_interest":0.0033,"comparison":0.001,"purchase_consideration":0.0007,"assistance_seeking":0.0081},"entropy":0.0829,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 717ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779185213,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:46.882032
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66471 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 969ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66471 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779187258,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":46.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 49ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779187258,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":46.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779187258,"behavioral_state":"passive_browsing","state_confidence":0.9947,"intent_probs":{"passive_browsing":0.9947,"product_interest":0.0013,"comparison":0.0004,"purchase_consideration":0.0003,"assistance_seeking":0.0033},"entropy":0.0386,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 3ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779187258,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:48.820332
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66516 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 282ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66516 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779188527,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 71ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779188527,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779188527,"behavioral_state":"passive_browsing","state_confidence":0.9978,"intent_probs":{"passive_browsing":0.9978,"product_interest":0.0005,"comparison":0.0002,"purchase_consideration":0.0001,"assistance_seeking":0.0014},"entropy":0.0177,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779188527,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:50.804798
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66586 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 1128ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66586 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779191185,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 179ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779191185,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779191185,"behavioral_state":"passive_browsing","state_confidence":0.9991,"intent_probs":{"passive_browsing":0.9991,"product_interest":0.0002,"comparison":0.0001,"purchase_consideration":0.0001,"assistance_seeking":0.0006},"entropy":0.0081,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779191185,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:52.871638
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66326 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 770ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66326 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779192855,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.4,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 279ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779192855,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.4,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779192855,"behavioral_state":"passive_browsing","state_confidence":0.9996,"intent_probs":{"passive_browsing":0.9996,"product_interest":0.0001,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0002},"entropy":0.0037,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779192855,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:54.864680
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66636 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0226)
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 1019ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66636 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779195302,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":51.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 281ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779195302,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":51.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779195302,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0001},"entropy":0.0018,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779195302,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:56.910260
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 65104 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 1181ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 65104 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779197358,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":55.6,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 269ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779197358,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":55.6,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779197358,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0009,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779197358,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:09:59.128893
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 64771 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860984, Longitude 78.3869125
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 679ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 64771 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779199230,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":39.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 258ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779199230,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":39.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779199230,"behavioral_state":"passive_browsing","state_confidence":1.0,"intent_probs":{"passive_browsing":1.0,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0006,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779199230,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:00.862887
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 62902 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 837ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 62902 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779201102,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.2,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 274ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779201102,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.2,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779201102,"behavioral_state":"passive_browsing","state_confidence":1.0,"intent_probs":{"passive_browsing":1.0,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0005,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [VAD] Speech started (rms=0.0859)
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1332ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779201102,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:03.307177
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67800 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 600ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67800 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779202984,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.2,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 30ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779202984,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.2,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779202984,"behavioral_state":"passive_browsing","state_confidence":1.0,"intent_probs":{"passive_browsing":1.0,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0004,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 3ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 2ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779202984,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:04.887501
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 66668 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 690ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 66668 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779204851,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 384ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779204851,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":44.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779204851,"behavioral_state":"passive_browsing","state_confidence":1.0,"intent_probs":{"passive_browsing":1.0,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0005,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779204851,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:07.230212
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67747 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 373ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67747 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779207013,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.7,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 54ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779207013,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":43.7,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779207013,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0006,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779207013,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:09.233272
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 68105 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 845ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 68105 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779209485,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.7,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 43ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779209485,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":41.7,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779209485,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0008,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779209485,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [AudioStreamManager] Mic stream closed unexpectedly. Restarting...
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:10.890557
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67935 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 633ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67935 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779210942,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":61.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 57ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779210942,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":61.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779210942,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0,"assistance_seeking":0.0},"entropy":0.0009,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779210942,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [VAD] Speech started (rms=0.0426)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:12.870086
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67656 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 671ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67656 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779212815,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":56.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 38ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779212815,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":56.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779212815,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0011,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779212815,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:14.754640
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67656 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [AudioStreamManager] Mic stream closed unexpectedly. Restarting...
+I/flutter ( 8785): [AudioStreamManager] WS closed.
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 913ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67656 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779215074,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":42.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 29ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779215074,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":42.5,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779215074,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0014,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779215074,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:15.698792
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 223ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779215349,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":49.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 62ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779215349,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":49.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779215349,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0015,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779215349,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:16.131481
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 900ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779216460,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 34ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779216460,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779216460,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0017,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779216460,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:17.068672
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 199ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779216674,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":53.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [AudioStreamManager] Mic stream closed unexpectedly. Restarting...
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 92ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779216674,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":53.0,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779216674,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0017,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779216674,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:17.362103
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 336ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217082,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":61.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 73ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217082,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":61.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217082,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0017,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217082,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:17.772491
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860056, Longitude 78.386933
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): SessionProvider: Stopping real-time stream coordinator...
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 211ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217397,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":48.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 80ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217397,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":48.9,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217397,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0016,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217397,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: CircuitBreakerException: Circuit breaker for EcomAddHandler is OPEN. Call blocked.
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:10:18.065737
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4860896, Longitude 78.3869987
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 199ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217682,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":49.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 365ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217682,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":49.8,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779217682,"behavioral_state":"passive_browsing","state_confidence":0.9999,"intent_probs":{"passive_browsing":0.9999,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.0016,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":false,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [VAD] Speech started (rms=0.0372)
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 0ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1229ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779217682,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0311)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0203)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0220)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0256)
+I/flutter ( 8785): [CameraService] App went to background. Camera disposed.
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [PIPELINE RUN] STARTING PIPELINE
+I/flutter ( 8785):   - Timestamp: 2026-06-18 16:11:02.673229
+I/flutter ( 8785):   - Source: PHONE
+I/flutter ( 8785):   - Input details:
+I/flutter ( 8785):     * Image frame: 67869 bytes
+I/flutter ( 8785):     * GPS Location: Latitude 17.4861796, Longitude 78.3870506
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 1] ContextEngine (Latency: 553ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     * Image size: 67869 bytes
+I/flutter ( 8785):     * GPS Hazard flag: false
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779262601,"session_id":"wearer_001","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.6,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 2] BehaviorEngine (Latency: 407ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779262601,"session_id":"kumargandhudi@glassdata.ai","meta":{"frame_reliability":{"gaze_tracker_confidence":0.4},"telemetry":{"temperature_c":40.6,"is_throttled":false}},"gaze_grounding":{"grounded_target":"","alignment_score":0.0,"spatial_proximity_px":0.0,"gaze_coordinates":{"x":120,"y":160}},"scene_objects":[],"interaction_primitives":{"pickup":{"active":false,"object_id":0,"displacement_px":0.0,"class_name":""},"product_rotation":{"active":false,"aspect_ratio_variance":0.0},"shelf_reach":{"active":false,"arm_y":null},"product_comparison":{"active":false,"compared_items":[]},"wrist_position":null},"scene_understanding":{"label":"indoor home / office (Vision Only)"},"activity_understanding":{"label":"browsing"}}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"timestamp_ms":1781779262601,"behavioral_state":"passive_browsing","state_confidence":0.9998,"intent_probs":{"passive_browsing":0.9998,"product_interest":0.0,"comparison":0.0,"purchase_consideration":0.0001,"assistance_seeking":0.0},"entropy":0.002,"top_salient_objects":[],"hesitation_score":0.0,"comparison_detected":false,"comparison_objects":[],"relevance_score":0.0,"prompt_worthiness":false,"primary_object_dwell_ms":0.0,"primary_object_revisit_n":0,"gate_open":false,"suppress_reason":"NO_ACTIVE_TARGETS","degraded_flags":{"gaze":false,"hand":false,"tracking":false},"emitted":true,"session_id":"kumargandhudi@glassdata.ai"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 3] GateCheck (Latency: 0ms)
+I/flutter ( 8785):   - Gaze target: 
+I/flutter ( 8785):   - Salience score: 0.0
+I/flutter ( 8785):   - Gate status: OPEN (Gate bypassed - Backend now handles interaction logic.)
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] Executing Interaction, Ecom, and Memory in parallel...
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [STEP 4] InteractionSubsystem (Latency: 1ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"behavioral_state":"passive_browsing","relevance_score":0.0,"hesitation_score":0.0,"top_salient_objects":[],"gate_open":false,"cpu_temp":34.0,"throttled":false}
+I/flutter ( 8785):   - Response payload:
+I/flutter ( 8785):     {"dialogue_mode":"query","llm_gate_status":"pass","last_utterance":"","bcp":{},"_info":"Async via WebSocket"}
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [STEP 5] EcomAddHandler (Latency: 1567ms, Mock: false)
+I/flutter ( 8785):   - Request:
+I/flutter ( 8785):     {"timestamp_ms":1781779262601,"relevance_score":0.0,"top_salient_objects":[]}
+I/flutter ( 8785):   - FAILED: Exception: Ecom input failed: HTTP 301 - <html>
+I/flutter ( 8785): <head><title>301 Moved Permanently</title></head>
+I/flutter ( 8785): <body>
+I/flutter ( 8785): <center><h1>301 Moved Permanently</h1></center>
+I/flutter ( 8785): <hr><center>nginx/1.30.1</center>
+I/flutter ( 8785): </body>
+I/flutter ( 8785): </html>
+I/flutter ( 8785): ------------------------------------------------------------
+I/flutter ( 8785): [PIPELINE RUN] ABORTED (Ecom Step Failed)
+I/flutter ( 8785): ============================================================
+I/flutter ( 8785): [VAD] Speech started (rms=0.0265)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0338)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0353)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
+I/flutter ( 8785): [VAD] Speech started (rms=0.0278)
+I/flutter ( 8785): [VAD] Speech ended (silence timeout)
