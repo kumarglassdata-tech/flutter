@@ -39,7 +39,10 @@ class AudioPlaybackService {
     if (!_isPlaying) return; // Prevent NullPointerException
     
     try {
-      await FlutterPcmSound.feed(PcmArrayInt16.fromList(pcmChunk.buffer.asInt16List()));
+      final int alignedLen = pcmChunk.length - (pcmChunk.length % 2);
+      final Uint8List safeBuffer = Uint8List(alignedLen);
+      safeBuffer.setRange(0, alignedLen, pcmChunk);
+      await FlutterPcmSound.feed(PcmArrayInt16.fromList(safeBuffer.buffer.asInt16List()));
     } catch (e) {
       print("[AudioPlaybackService] Failed to feed audio chunk: $e");
     }

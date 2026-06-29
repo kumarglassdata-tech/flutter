@@ -101,16 +101,18 @@ class CameraService extends ChangeNotifier with WidgetsBindingObserver {
 
       _controller = CameraController(
         selectedCamera,
-        ResolutionPreset.low,
+        ResolutionPreset.medium,
         enableAudio: false,
         imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg,
       );
       await _controller!.initialize();
       _isInitialized = true;
       _errorMessage = null;
+      debugPrint('[CameraService] Initialized successfully');
       notifyListeners();
     } catch (error) {
       _errorMessage = 'Camera initialization failed: $error';
+      debugPrint('[CameraService] $_errorMessage');
       notifyListeners();
     }
   }

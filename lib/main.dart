@@ -71,7 +71,7 @@ class SmartGlassApp extends StatelessWidget {
             title: 'Smart Myna',
             theme: AppTheme.lightTheme(),
             darkTheme: AppTheme.darkTheme(),
-            themeMode: settingsProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+            themeMode: ThemeMode.light,
             routerConfig: router,
             debugShowCheckedModeBanner: false,
             builder: (context, child) {

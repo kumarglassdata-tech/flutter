@@ -5,6 +5,7 @@ import 'package:smartglass_flutter/core/theme/app_theme.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/models/engine_models.dart';
 import 'package:smartglass_flutter/core/providers/auth_provider.dart';
+import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'bounding_box_overlay.dart';
 import 'mini_metric.dart';
 
@@ -26,6 +27,7 @@ class CameraPreviewCard extends StatelessWidget {
     final telemetry = cameraService.telemetry;
     final isReady = controller != null && controller.value.isInitialized;
     final isAdmin = context.watch<AuthProvider>().isAdmin;
+    final audioStreamManager = context.watch<SessionProvider>().audioStreamManager;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -46,13 +48,31 @@ class CameraPreviewCard extends StatelessWidget {
                     onPressed: () => onFlipCamera!(),
                     icon: const Icon(Icons.cameraswitch_rounded),
                   ),
-                Text(
-                  cameraService.isStreaming ? 'Streaming' : 'Idle',
-                  style: TextStyle(
-                    color: cameraService.isStreaming ? const Color(0xFF16A34A) : AppTheme.onSurfaceVariant,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                StreamBuilder<bool>(
+                  stream: audioStreamManager.isSpeakingStream,
+                  initialData: audioStreamManager.isSpeaking,
+                  builder: (context, snapshot) {
+                    final isSpeaking = snapshot.data ?? false;
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isSpeaking ? Icons.mic : Icons.mic_none,
+                          color: isSpeaking ? Colors.redAccent : AppTheme.onSurfaceVariant,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isSpeaking ? 'Listening...' : 'Mic Idle',
+                          style: TextStyle(
+                            color: isSpeaking ? Colors.redAccent : AppTheme.onSurfaceVariant,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -105,6 +125,18 @@ class CameraPreviewCard extends StatelessWidget {
                           cameraService.errorMessage ?? 'Initialize the camera or start the runtime to begin streaming.',
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: AppTheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => cameraService.initialize(
+                            preferredLens: cameraService.preferredLens,
+                          ),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text('Initialize Camera'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primary,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ],
                     ),

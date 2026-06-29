@@ -488,11 +488,16 @@ class EngineStatusCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                name,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+              Expanded(
+                child: Text(
+                  name,
+                  style:
+                      const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
+              const SizedBox(width: 8),
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -511,37 +516,49 @@ class EngineStatusCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Icon(Icons.timer_outlined,
-                  size: 16, color: AppTheme.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Text(
-                'Latency: ',
-                style:
-                    TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.timer_outlined,
+                      size: 16, color: AppTheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Latency: ',
+                    style:
+                        TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                  ),
+                  Text(
+                    '${latencyMs.toStringAsFixed(1)} ms',
+                    style:
+                        const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                  ),
+                ],
               ),
-              Text(
-                '${latencyMs.toStringAsFixed(1)} ms',
-                style:
-                    const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
-              ),
-              const Spacer(),
-              Icon(Icons.settings_suggest_outlined,
-                  size: 16, color: AppTheme.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Text(
-                'Mode: ',
-                style:
-                    TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
-              ),
-              Text(
-                isMock ? 'Mock Fallback' : 'Real Deployment',
-                style: TextStyle(
-                  color: isMock ? const Color(0xFF8B5CF6) : AppTheme.primary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.settings_suggest_outlined,
+                      size: 16, color: AppTheme.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Mode: ',
+                    style:
+                        TextStyle(color: AppTheme.onSurfaceVariant, fontSize: 12),
+                  ),
+                  Text(
+                    isMock ? 'Mock Fallback' : 'Real Deployment',
+                    style: TextStyle(
+                      color: isMock ? const Color(0xFF8B5CF6) : AppTheme.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

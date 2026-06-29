@@ -396,6 +396,7 @@ class SessionProvider extends ChangeNotifier {
       sourceManager: sourceManager,
       pipelineCoordinator: pipelineCoordinator,
       telemetryService: telemetryService,
+      getActiveVoiceNlu: () => _activeVoiceNlu,
     );
 
     healthMonitor = HealthMonitor(
@@ -426,7 +427,21 @@ class SessionProvider extends ChangeNotifier {
     _addLog('Always-Listening mode activated.');
   }
 
+  Timer? _voiceNluTimer;
+  Map<String, dynamic>? _activeVoiceNlu;
+
   void _initAudioStreamListeners(InteractionClient interactionClient) {
+    audioStreamManager.onSpeechStartContext = () {
+      // Clear previous voice intent on new speech start
+      _voiceNluTimer?.cancel();
+      _activeVoiceNlu = null;
+
+      if (_state.lastBIEFrame != null) {
+        return _state.lastBIEFrame!.raw;
+      }
+      return <String, dynamic>{};
+    };
+
     audioStreamManager.transcriptStream.listen((text) async {
       if (text.isNotEmpty && text != _lastSpokenUtterance) {
         _lastSpokenUtterance = text;
@@ -460,6 +475,19 @@ class SessionProvider extends ChangeNotifier {
     audioStreamManager.statusStream.listen((statusData) {
       final interactionResponse = InteractionResponse.fromJson(statusData);
       _state = _state.copyWith(lastInteractionResponse: interactionResponse);
+
+      // Extract voice NLU and set 15s TTL
+      final bcpRaw = interactionResponse.raw['bcp'] as Map<String, dynamic>?;
+      final bcpVoiceNlu = bcpRaw?['voice_nlu'];
+      final voiceNlu = bcpVoiceNlu ?? interactionResponse.raw['voice_nlu'] ?? interactionResponse.raw['voice_assistant_response'];
+
+      if (voiceNlu != null && voiceNlu['rhino_active'] == true) {
+        _activeVoiceNlu = voiceNlu;
+        _voiceNluTimer?.cancel();
+        _voiceNluTimer = Timer(const Duration(seconds: 15), () {
+          _activeVoiceNlu = null;
+        });
+      }
 
       if (interactionResponse.lastUtterance.isNotEmpty && interactionResponse.lastUtterance != _lastSpokenUtterance) {
         _lastSpokenUtterance = interactionResponse.lastUtterance;

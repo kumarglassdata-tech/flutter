@@ -2,15 +2,16 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+import 'dart:io';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter_silero_vad/flutter_silero_vad.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_pcm_sound/flutter_pcm_sound.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:record/record.dart';
 import 'package:audio_session/audio_session.dart';
 
-// RMS amplitude threshold — tune for smart glasses mic sensitivity
-// 0.01 = very sensitive, 0.05 = moderate, 0.10 = only loud speech
-const double _kSpeechThreshold = 0.02;
 const Duration _kSilenceTimeout = Duration(milliseconds: 800);
 
 class AudioStreamManager {
@@ -23,7 +24,10 @@ class AudioStreamManager {
   // VAD state
   bool _vadActive = false;
   bool _isSpeaking = false;
+  bool _waitingForMIISResponse = false;
   Timer? _silenceTimer;
+  FlutterSileroVad? _vad;
+  final List<int> _audioAccumulator = [];
 
   // Playback queue
   final List<Uint8List> _audioQueue = [];
@@ -37,6 +41,7 @@ class AudioStreamManager {
 
   // PCM start lock
   Completer<void>? _startCompleter;
+  int _debugFrameCount = 0;
 
   final _transcriptController = StreamController<String>.broadcast();
   Stream<String> get transcriptStream => _transcriptController.stream;
@@ -44,8 +49,15 @@ class AudioStreamManager {
   final _statusController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get statusStream => _statusController.stream;
 
+  final _isSpeakingController = StreamController<bool>.broadcast();
+  Stream<bool> get isSpeakingStream => _isSpeakingController.stream;
+
   bool get isVadActive => _vadActive;
   bool get isRecording => _micSubscription != null;
+  bool get isSpeaking => _isSpeaking;
+
+  // Callback to fetch dynamic behavior context right before speech starts
+  Map<String, dynamic> Function()? onSpeechStartContext;
 
   // ---------------------------------------------------------------------------
   // Init
@@ -68,6 +80,28 @@ class AudioStreamManager {
     ));
     // The Interaction Engine backend streams 16kHz PCM-16 TTS
     await FlutterPcmSound.setup(sampleRate: 16000, channelCount: 1);
+
+    try {
+      _vad = FlutterSileroVad();
+      final dir = await getApplicationDocumentsDirectory();
+      final modelPath = '${dir.path}/silero_vad.onnx';
+      
+      final data = await rootBundle.load('assets/models/silero_vad.onnx');
+      final bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      File(modelPath).writeAsBytesSync(bytes);
+      
+      await _vad!.initialize(
+        modelPath: modelPath,
+        sampleRate: 16000,
+        frameSize: 32,
+        threshold: 0.3,
+        minSilenceDurationMs: 0,
+        speechPadMs: 0,
+      );
+      debugPrint('[AudioStreamManager] Silero VAD initialized successfully');
+    } catch (e) {
+      debugPrint('[AudioStreamManager] Failed to initialize VAD: $e');
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -82,6 +116,7 @@ class AudioStreamManager {
     }
     _vadActive = true;
     _isSpeaking = false;
+    _waitingForMIISResponse = false;
 
     // Ensure any stuck native recording session is killed before starting a new one
     try {
@@ -98,53 +133,124 @@ class AudioStreamManager {
       numChannels: 1,
     ));
 
-    _micSubscription = stream.listen((Uint8List chunk) {
+    _micSubscription = stream.listen((Uint8List chunk) async {
       if (!_vadActive) return;
       
       // PERMANENT ECHO FIX: Completely drop microphone frames while the AI is speaking.
-      // This guarantees the AI can never hear itself, never trigger false VAD, 
-      // and never cut itself off mid-sentence.
-      if (_isPlaying) return;
+      if (_isPlaying) {
+         _audioAccumulator.clear();
+         return;
+      }
 
-      final rms = _calculateRms(chunk);
+      // Copy to ensure 0-offset alignment and even length, preventing 'Offset must be a multiple of 2' RangeError
+      final int alignedLen = chunk.length - (chunk.length % 2);
+      final safeChunk = Uint8List(alignedLen);
+      safeChunk.setRange(0, alignedLen, chunk);
+      final int16List = safeChunk.buffer.asInt16List();
 
-      if (rms >= _kSpeechThreshold) {
-        _silenceTimer?.cancel();
-        _silenceTimer = null;
+      // Apply 1x digital gain to fix quiet mic on Android devices
+      for (int i = 0; i < int16List.length; i++) {
+        int amplified = (int16List[i] * 1.0).round();
+        if (amplified > 32767) amplified = 32767;
+        if (amplified < -32768) amplified = -32768;
+        int16List[i] = amplified;
+      }
 
-        if (!_isSpeaking) {
-          _isSpeaking = true;
-          debugPrint('[VAD] Speech started (rms=${rms.toStringAsFixed(4)})');
-          _safeSinkAdd(jsonEncode({'type': 'start_of_speech'}));
+      _audioAccumulator.addAll(int16List);
+
+      // Frame size 32ms at 16000Hz = 512 samples
+      const int targetSamples = 512;
+
+      while (_audioAccumulator.length >= targetSamples) {
+        final frameSamples = _audioAccumulator.sublist(0, targetSamples);
+        _audioAccumulator.removeRange(0, targetSamples);
+
+        final float32List = Float32List(targetSamples);
+        double maxAmplitude = 0.0;
+        for (int i = 0; i < targetSamples; i++) {
+          final val = frameSamples[i] / 32768.0;
+          float32List[i] = val;
+          if (val.abs() > maxAmplitude) maxAmplitude = val.abs();
         }
-        // Stream chunk to server while speaking
-        _safeSinkAdd(chunk);
-      } else {
-        // Keep streaming during natural brief pauses so the server gets context
-        if (_isSpeaking) {
-          _safeSinkAdd(chunk);
-          _silenceTimer ??= Timer(_kSilenceTimeout, () {
-            if (_isSpeaking) {
-              _isSpeaking = false;
-              debugPrint('[VAD] Speech ended (silence timeout)');
-              _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
-            }
+
+        _debugFrameCount++;
+        if (_debugFrameCount >= 30) {
+          // debugPrint('[VAD] Mic chunk received. Max amplitude: ${maxAmplitude.toStringAsFixed(4)}');
+          _debugFrameCount = 0;
+        }
+
+        bool isActive = false;
+        if (_vad != null) {
+          try {
+            isActive = (await _vad!.predict(float32List)) ?? false;
+          } catch (e) {
+            debugPrint('[VAD] Prediction error: $e');
+          }
+
+          // Fallback: If the neural net is unsure but the volume is very loud, force it active
+          if (!isActive && maxAmplitude > 0.5) {
+            isActive = true;
+          }
+
+          if (isActive) {
+            _silenceTimer?.cancel();
             _silenceTimer = null;
-          });
+
+            if (!_isSpeaking) {
+              _isSpeaking = true;
+              _isSpeakingController.add(true);
+              debugPrint('[VAD] Speech started (Silero)');
+              
+              final startMessage = <String, dynamic>{'type': 'start_of_speech'};
+              if (onSpeechStartContext != null) {
+                final ctx = onSpeechStartContext!();
+                if (ctx.isNotEmpty) {
+                  startMessage['context'] = ctx;
+                }
+              }
+              _safeSinkAdd(jsonEncode(startMessage));
+            }
+          } else {
+            if (_isSpeaking) {
+              _silenceTimer ??= Timer(_kSilenceTimeout, () {
+                if (_isSpeaking) {
+                  _isSpeaking = false;
+                  _waitingForMIISResponse = true;
+                  _isSpeakingController.add(false);
+                  debugPrint('[VAD] Speech ended (silence timeout), waiting for MIIS...');
+                  _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
+                }
+                _silenceTimer = null;
+              });
+            }
+          }
         }
       }
+
+      // Keep streaming while speaking
+      if (_isSpeaking) {
+        _safeSinkAdd(safeChunk);
+      }
     }, onError: (err) {
-      debugPrint('[AudioStreamManager] Mic stream error: $err. Instantly restarting...');
+      debugPrint('[AudioStreamManager] Mic stream error: $err.');
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(milliseconds: 50), startVad);
+      if (!_isPlaying) {
+        Future.delayed(const Duration(milliseconds: 50), startVad);
+      } else {
+        debugPrint('[AudioStreamManager] Deferring mic restart until TTS finishes.');
+      }
     }, onDone: () {
-      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly. Instantly restarting to prevent audio drop...');
+      debugPrint('[AudioStreamManager] Mic stream closed unexpectedly.');
       _vadActive = false;
       _micSubscription?.cancel();
       _micSubscription = null;
-      Future.delayed(const Duration(milliseconds: 50), startVad);
+      if (!_isPlaying) {
+        Future.delayed(const Duration(milliseconds: 50), startVad);
+      } else {
+        debugPrint('[AudioStreamManager] Deferring mic restart until TTS finishes.');
+      }
     });
   }
 
@@ -161,24 +267,7 @@ class AudioStreamManager {
   }
 
   // ---------------------------------------------------------------------------
-  // RMS calculation — 16-bit PCM little-endian, normalised 0.0–1.0
-  // ---------------------------------------------------------------------------
-
-  double _calculateRms(Uint8List data) {
-    if (data.length < 2) return 0.0;
-    double sumSq = 0.0;
-    for (int i = 0; i < data.length - 1; i += 2) {
-      int sample = (data[i + 1] << 8) | data[i];
-      if (sample >= 32768) sample -= 65536; // sign extend
-      final norm = sample / 32768.0;
-      sumSq += norm * norm;
-    }
-    final sampleCount = data.length ~/ 2;
-    return sqrt(sumSq / sampleCount);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Push-to-talk fallback (manual mic button)
+  // Output WebSocket processingalk fallback (manual mic button)
   // ---------------------------------------------------------------------------
 
   Future<void> startRecording() async {
@@ -188,7 +277,16 @@ class AudioStreamManager {
       return;
     }
     triggerBargeIn();
-    _safeSinkAdd(jsonEncode({'type': 'start_of_speech'}));
+    
+    final startMessage = <String, dynamic>{'type': 'start_of_speech'};
+    if (onSpeechStartContext != null) {
+      final ctx = onSpeechStartContext!();
+      if (ctx.isNotEmpty) {
+        startMessage['context'] = ctx;
+      }
+    }
+    _safeSinkAdd(jsonEncode(startMessage));
+    
     final stream = await _audioRecorder.startStream(const RecordConfig(
       encoder: AudioEncoder.pcm16bits,
       sampleRate: 16000,
@@ -212,6 +310,7 @@ class AudioStreamManager {
     _intentionalDisconnect = false;
     _currentUrl = url;
     try {
+      _channel?.sink.close();
       _channel = WebSocketChannel.connect(Uri.parse(url));
       _channel!.stream.listen(
         (message) async {
@@ -238,6 +337,7 @@ class AudioStreamManager {
           } else if (message is String) {
             try {
               final data = jsonDecode(message) as Map<String, dynamic>;
+              debugPrint('[AudioStreamManager] Received WS control: ${data['type']}');
               switch (data['type'] as String?) {
                 case 'audio_start':
                   await _startStream();
@@ -246,10 +346,16 @@ class AudioStreamManager {
                   await _stopStream();
                   break;
                 case 'transcript':
+                  debugPrint('[AudioStreamManager] Backend Transcript: ${data['text']}');
                   _transcriptController.add(data['text'] as String? ?? '');
                   break;
                 case 'status':
+                  _waitingForMIISResponse = false;
+                  debugPrint('[AudioStreamManager] Backend Status: ${data['status']}');
                   _statusController.add(data);
+                  break;
+                case 'toast':
+                  debugPrint('[AudioStreamManager] Backend Toast: ${data['message']}');
                   break;
               }
             } catch (e) {
@@ -273,6 +379,7 @@ class AudioStreamManager {
   }
 
   void _scheduleReconnect() {
+    _waitingForMIISResponse = false;
     if (_intentionalDisconnect) return;
     _channel = null;
     _reconnectTimer?.cancel();
@@ -325,13 +432,18 @@ class AudioStreamManager {
         final chunk = _audioQueue.removeAt(0);
         for (int i = 0; i < chunk.length; i += 4096) {
           if (!_isPlaying) break;
-          final end = (i + 4096).clamp(0, chunk.length);
           try {
+            final int end = (i + 4096 < chunk.length) ? i + 4096 : chunk.length;
+            final subChunk = chunk.sublist(i, end);
+            final int subAlignedLen = subChunk.length - (subChunk.length % 2);
+            final safeSubChunk = Uint8List(subAlignedLen);
+            safeSubChunk.setRange(0, subAlignedLen, subChunk);
+            
             await FlutterPcmSound.feed(
-              PcmArrayInt16.fromList(chunk.sublist(i, end).buffer.asInt16List()),
+              PcmArrayInt16.fromList(safeSubChunk.buffer.asInt16List()),
             );
           } catch (e) {
-            break;
+            debugPrint("[AudioStreamManager] Failed to feed TTS chunk: $e");
           }
         }
       }
@@ -362,18 +474,37 @@ class AudioStreamManager {
   Future<void> _stopStream() async {
     if (!_isPlaying || _isStopping) return;
     _isStopping = true;
-    _isPlaying = false;
-    _audioQueue.clear();
-    while (_isProcessingQueue) {
-      await Future.delayed(const Duration(milliseconds: 10));
+    
+    // Do NOT clear the audio queue here! `audio_end` arrives over the network 
+    // instantly, but the audio takes time to physically play out of the speaker.
+    // We must wait for the queue to completely finish before killing the engine.
+    int timeoutCounter = 0;
+    while ((_audioQueue.isNotEmpty || _isProcessingQueue) && timeoutCounter < 200) {
+      await Future.delayed(const Duration(milliseconds: 20));
+      timeoutCounter++;
     }
+
+
     try {
       await FlutterPcmSound.release();
       await FlutterPcmSound.setup(sampleRate: 16000, channelCount: 1);
     } catch (e) {
       debugPrint('[AudioStreamManager] Failed to stop PCM stream: $e');
     }
+    
+    // ECHO FIX: The OS audio buffer (AudioTrack) holds ~500ms of audio that 
+    // physically plays out of the speaker AFTER we stop feeding it. We MUST 
+    // delay turning the microphone back on, otherwise the app hears its own echo!
+    await Future.delayed(const Duration(milliseconds: 1000));
+    
+    _isPlaying = false;
     _isStopping = false;
+
+    // Check if mic was dropped during playback and restart it
+    if (!_vadActive && _micSubscription == null) {
+      debugPrint('[AudioStreamManager] TTS finished. Resuming deferred mic stream...');
+      Future.delayed(const Duration(milliseconds: 50), startVad);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -383,7 +514,13 @@ class AudioStreamManager {
   Future<void> disconnect() async {
     _intentionalDisconnect = true;
     _reconnectTimer?.cancel();
-    await _channel?.sink.close();
+    try {
+      if (_channel != null) {
+        await _channel!.sink.close().timeout(const Duration(seconds: 1));
+      }
+    } catch (e) {
+      debugPrint('[AudioStreamManager] Non-fatal error closing WS: $e');
+    }
     _channel = null;
     await _micSubscription?.cancel();
     _micSubscription = null;

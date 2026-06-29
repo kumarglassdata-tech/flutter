@@ -28,6 +28,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void initState() {
+    
     super.initState();
     _requestPermissions();
   }
@@ -240,7 +241,8 @@ class _AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Column(
+      child: ListView(
+        padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
             decoration: const BoxDecoration(
@@ -292,15 +294,7 @@ class _AppDrawer extends StatelessWidget {
             _drawerItem(context, Icons.analytics_rounded, 'Engine Inspector', '/engine-inspector'),
           ],
           _drawerItem(context, Icons.settings_rounded, 'Settings', '/settings'),
-          Consumer<SettingsProvider>(
-            builder: (context, settings, _) => SwitchListTile(
-              title: const Text('Dark Mode'),
-              secondary: const Icon(Icons.dark_mode_rounded),
-              value: settings.isDarkMode,
-              onChanged: (val) => settings.setDarkMode(val),
-              activeColor: AppTheme.primary,
-            ),
-          ),
+
           _drawerItem(context, Icons.account_circle_rounded, 'Profile', '/profile'),
           _drawerItem(context, Icons.info_rounded, 'About', '/about'),
           const Spacer(),

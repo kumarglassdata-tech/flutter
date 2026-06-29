@@ -14,7 +14,6 @@ class RequestMappers {
 
     return {
       'image': base64Encode(imageBytes),
-      'audio': [audioLevel],
       'location': {
         'latitude': lat,
         'longitude': lon,
@@ -23,7 +22,7 @@ class RequestMappers {
     };
   }
 
-  static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon, String sessionId = 'wearer_001'}) {
+  static Map<String, dynamic> toBehaviorRequest(ContextEngineOutput contextOutput, {double? lat, double? lon, String sessionId = 'wearer_001', Map<String, dynamic>? voiceNlu}) {
     final raw = Map<String, dynamic>.from(contextOutput.raw);
     
     // The Context Engine now directly returns the exact schema expected by the Behavior Engine.
@@ -31,6 +30,10 @@ class RequestMappers {
     raw['session_id'] = sessionId;
     if (!raw.containsKey('timestamp_ms')) {
       raw['timestamp_ms'] = DateTime.now().millisecondsSinceEpoch;
+    }
+    
+    if (voiceNlu != null) {
+      raw['voice_nlu'] = voiceNlu;
     }
     
     return raw;
@@ -64,10 +67,7 @@ class RequestMappers {
             }
           ];
 
-    var scoreForBackend = bieFrame.salienceScore;
-    if (scoreForBackend >= 0.50) {
-      scoreForBackend = 0.85;
-    }
+    final scoreForBackend = bieFrame.salienceScore;
 
     return {
       'timestamp_ms': bieFrame.raw['timestamp_ms'] ?? DateTime.now().millisecondsSinceEpoch,
