@@ -231,8 +231,7 @@ class AudioStreamManager {
                   _isSpeakingController.add(false);
                   debugPrint('[VAD] Speech ended (silence timeout), waiting for MIIS...');
                   _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));
-                }
-                _silenceTimer = null;
+                  _silenceTimer = null;
               });
             }
           }
