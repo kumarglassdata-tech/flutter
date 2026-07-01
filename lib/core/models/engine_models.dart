@@ -397,6 +397,7 @@ class EcomAdProduct {
   final String name;
   final double price;
   final String imageUrl;
+  final String? headline;
   final String? delivery;
   final double? rating;
   final String? offer;
@@ -409,6 +410,7 @@ class EcomAdProduct {
     required this.name,
     required this.price,
     required this.imageUrl,
+    this.headline,
     this.delivery,
     this.rating,
     this.offer,
@@ -417,7 +419,8 @@ class EcomAdProduct {
     this.finalScore,
   });
 
-  factory EcomAdProduct.fromJson(Map<String, dynamic> json) {
+  factory EcomAdProduct.fromJson(Map<String, dynamic> rawJson) {
+    final json = rawJson['ad_content'] as Map<String, dynamic>? ?? rawJson;
     double parsedPrice = 0.0;
     if (json['price_val'] != null) {
       parsedPrice = (json['price_val'] as num).toDouble();
@@ -451,6 +454,10 @@ class EcomAdProduct {
       } catch (_) {}
     }
 
+    if (idVal == '#' || idVal == 'N/A' || idVal == 'null') {
+      idVal = '';
+    }
+
     if (idVal.isNotEmpty && !idVal.startsWith('http')) {
       final base = EnvConfig.actionHubBuyUrl.endsWith('/buy')
           ? EnvConfig.actionHubBuyUrl.replaceAll('/buy', '')
@@ -480,6 +487,7 @@ class EcomAdProduct {
           json['thumbnail']?.toString() ??
           json['thumbnail_url']?.toString() ??
           '',
+      headline: json['headline']?.toString(),
       delivery: json['delivery']?.toString(),
       rating: (json['rating'] as num?)?.toDouble(),
       offer: json['offer']?.toString(),

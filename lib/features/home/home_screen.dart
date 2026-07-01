@@ -86,16 +86,6 @@ class _HomeScreenState extends State<HomeScreen> {
         await _launchUrl(match.id);
         return;
       }
-
-      // Fallback to the first available valid link in suggestions
-      final fallback = suggestions.firstWhere(
-        (p) => p.id.startsWith('http://') || p.id.startsWith('https://'),
-        orElse: () => EcomAdProduct(id: '', name: '', price: 0.0, imageUrl: ''),
-      );
-      if (fallback.id.isNotEmpty) {
-        await _launchUrl(fallback.id);
-        return;
-      }
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -445,19 +435,30 @@ class _HomeScreenState extends State<HomeScreen> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ...salientObjects.map((obj) {
+                      final normalizedObj = obj.toLowerCase();
+                      final match = suggestedProducts.cast<EcomAdProduct?>().firstWhere(
+                        (p) => p != null && p.name.toLowerCase().contains(normalizedObj) && (p.id.startsWith('http://') || p.id.startsWith('https://')),
+                        orElse: () => null,
+                      );
                       return _ProductCard(
-                        name: obj.isNotEmpty ? (obj[0].toUpperCase() + obj.substring(1)) : obj,
-                        price: 'Salient Target',
+                        name: match != null ? match.name : (obj.isNotEmpty ? (obj[0].toUpperCase() + obj.substring(1)) : obj),
+                        headline: match?.headline,
+                        price: match != null ? '₹${match.price.toStringAsFixed(0)}' : 'Salient Target',
                         icon: Icons.center_focus_strong_rounded,
                         color: AppTheme.primary,
                         delay: 100,
-                        imageUrl: '',
+                        imageUrl: match?.imageUrl ?? '',
                         onTap: () => _openEcommerceForObject(context, obj, suggestedProducts),
                       );
                     }),
-                    ...suggestedProducts.map((prod) {
+                    ...suggestedProducts.where((prod) {
+                      // Only show this product if it hasn't already been mapped to a salient object
+                      final isMapped = salientObjects.any((obj) => prod.name.toLowerCase().contains(obj.toLowerCase()) && (prod.id.startsWith('http://') || prod.id.startsWith('https://')));
+                      return !isMapped;
+                    }).map((prod) {
                       return _ProductCard(
                         name: prod.name,
+                        headline: prod.headline,
                         price: '₹${prod.price.toStringAsFixed(0)}',
                         icon: Icons.shopping_bag_rounded,
                         color: AppTheme.primary,
@@ -485,6 +486,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+              if (session.state.lastEcomResponse?.analyzeData != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: _AnalyzePanel(data: session.state.lastEcomResponse!.analyzeData!),
+                ),
+              if (session.state.lastEcomResponse?.lifeBalanceData != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: _LifeBalancePanel(data: session.state.lastEcomResponse!.lifeBalanceData!),
+                ),
+              if (session.state.lastEcomResponse != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: ExpansionTile(
+                    title: const Text('Debug: Ecom Output', style: TextStyle(color: Colors.red)),
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          session.state.lastEcomResponse!.raw.toString(),
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
             const SizedBox(height: 24),
           ],
@@ -500,62 +531,69 @@ class _StatusBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isLoggedIn
-              ? [const Color(0xFF3B82F6), const Color(0xFF1E40AF)]
-              : [const Color(0xFF64748B), const Color(0xFF334155)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return GestureDetector(
+      onTap: () {
+        if (!isLoggedIn) {
+          context.go('/login');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isLoggedIn
+                ? [const Color(0xFF3B82F6), const Color(0xFF1E40AF)]
+                : [const Color(0xFF64748B), const Color(0xFF334155)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: (isLoggedIn ? const Color(0xFF3B82F6) : const Color(0xFF64748B))
+                  .withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: (isLoggedIn ? const Color(0xFF3B82F6) : const Color(0xFF64748B))
-                .withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              isLoggedIn ? Icons.check_circle_rounded : Icons.login_rounded,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isLoggedIn ? 'Session Active' : 'Not Signed In',
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
               ),
-              Text(
-                isLoggedIn
-                    ? 'SmartGlass runtime ready'
-                    : 'Sign in to unlock full features',
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+              child: Icon(
+                isLoggedIn ? Icons.check_circle_rounded : Icons.login_rounded,
+                color: Colors.white,
+                size: 24,
               ),
-            ],
-          ),
-        ],
+            ),
+            const SizedBox(width: 14),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isLoggedIn ? 'Session Active' : 'Not Signed In',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15),
+                ),
+                Text(
+                  isLoggedIn
+                      ? 'SmartGlass runtime ready'
+                      : 'Sign in to unlock full features',
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -644,6 +682,7 @@ class _ProductCard extends StatelessWidget {
   final Color color;
   final int delay;
   final String? imageUrl;
+  final String? headline;
   final VoidCallback? onTap;
 
   const _ProductCard({
@@ -653,6 +692,7 @@ class _ProductCard extends StatelessWidget {
     required this.color,
     required this.delay,
     this.imageUrl,
+    this.headline,
     this.onTap,
   });
 
@@ -695,6 +735,13 @@ class _ProductCard extends StatelessWidget {
                 child: hasImg ? null : Center(child: Icon(icon, color: color, size: 42)),
               ),
               const SizedBox(height: 12),
+              if (headline != null && headline!.isNotEmpty) ...[
+                Text(headline!,
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 11, color: color),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 2),
+              ],
               Text(name,
                   style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
                   maxLines: 1,
@@ -732,7 +779,7 @@ class _EngineMetricsPanel extends StatelessWidget {
     final stateConfidence = lastBIEFrame?.stateConfidence ?? 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
@@ -751,26 +798,29 @@ class _EngineMetricsPanel extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.psychology_rounded,
                   color: AppTheme.primary,
-                  size: 20,
+                  size: 24,
                 ),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Focus & Behavioral State',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.onSurface,
-                    ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  'Focus & Behavioral State',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.onSurface,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               if (isSessionActive)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -938,6 +988,154 @@ class _MetricProgressRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _AnalyzePanel extends StatelessWidget {
+  final AnalyzeResponse data;
+  const _AnalyzePanel({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 14, bottom: 8),
+      padding: const EdgeInsets.all(16),
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: AppTheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.compare_arrows_rounded, color: Colors.blueAccent),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Platform Analysis',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.onSurface,
+                      ),
+                ),
+              ),
+              if (data.suppressions > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${data.suppressions} Suppressed',
+                    style: const TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...data.platforms.map((p) => Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      p.platform,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    ),
+                    Text(
+                      'ROI: ${p.roi}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: (double.tryParse(p.roi.replaceAll('%', '')) ?? 0) >= 0 ? Colors.green : Colors.orange,
+                      ),
+                    ),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _LifeBalancePanel extends StatelessWidget {
+  final LifeBalanceResponse data;
+  const _LifeBalancePanel({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isGood = data.score >= 70;
+    return Container(
+      margin: const EdgeInsets.only(right: 14, bottom: 8),
+      padding: const EdgeInsets.all(16),
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: isGood ? Colors.green.withValues(alpha: 0.5) : Colors.orange.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.self_improvement_rounded, color: isGood ? Colors.green : Colors.orange),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Life Balance',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppTheme.onSurface,
+                      ),
+                ),
+              ),
+              Text(
+                '${data.score}/100',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: isGood ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            data.primaryNotification,
+            style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black87),
+          ),
+          const SizedBox(height: 16),
+          ...data.breakdown.entries.map((e) => Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: _MetricProgressRow(
+                  label: e.key,
+                  value: e.value / 100.0,
+                  icon: Icons.pie_chart_rounded,
+                  color: isGood ? Colors.green : Colors.orange,
+                ),
+              )),
+        ],
+      ),
     );
   }
 }

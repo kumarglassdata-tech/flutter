@@ -21,16 +21,39 @@ class AppShell extends StatefulWidget {
   State<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends State<AppShell> {
+class _AppShellState extends State<AppShell> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late SessionProvider _sessionProvider;
   String _lastCheckedUtterance = '';
   bool _isBottomSheetOpen = false;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
-    
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _requestPermissions();
+    
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+    
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final auth = context.read<AuthProvider>();
+      if (auth.isLoggedIn) {
+        _sessionProvider.startAlwaysListening();
+      }
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.detached) {
+      _sessionProvider.stopAlwaysListening();
+    }
   }
 
   @override
@@ -42,7 +65,9 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sessionProvider.removeListener(_onSessionUpdate);
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -76,7 +101,10 @@ class _AppShellState extends State<AppShell> {
     ].request();
     
     if (mounted) {
-      context.read<SessionProvider>().startAlwaysListening();
+      final auth = context.read<AuthProvider>();
+      if (auth.isLoggedIn) {
+        context.read<SessionProvider>().startAlwaysListening();
+      }
     }
   }
 
@@ -84,6 +112,14 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     final auth = context.watch<AuthProvider>();
+
+    if (auth.isLoggedIn) {
+      Permission.microphone.isGranted.then((granted) {
+        if (granted && mounted) {
+          context.read<SessionProvider>().startAlwaysListening();
+        }
+      });
+    }
 
     return Scaffold(
       key: AppShell.scaffoldKey,
@@ -104,23 +140,26 @@ class _AppShellState extends State<AppShell> {
             builder: (ctx) => const MynaAssistantBottomSheet(),
           );
         },
-        child: Container(
-          width: 64,
-          height: 64,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFF2563EB),
-            boxShadow: [
-              BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
-            ],
-          ),
-          child: Center(
-            child: ClipOval(
-              child: Image.asset(
-                "assets/images/myna_bot.png",
-                width: 44,
-                height: 44,
-                fit: BoxFit.cover,
+        child: ScaleTransition(
+          scale: _pulseAnimation,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF2563EB),
+              boxShadow: [
+                BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+              ],
+            ),
+            child: Center(
+              child: ClipOval(
+                child: Image.asset(
+                  "assets/images/myna_bot.png",
+                  width: 44,
+                  height: 44,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
@@ -145,7 +184,7 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems();
+    final items = _navItems(auth.isLoggedIn);
     final currentIndex = _currentIndex(currentLocation);
 
     return Container(
@@ -186,7 +225,7 @@ class _SideRail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final items = _navItems();
+    final items = _navItems(auth.isLoggedIn);
     final currentIndex = _currentIndex(currentLocation);
 
     return NavigationRail(
@@ -348,24 +387,32 @@ class _NavItem {
   const _NavItem(this.label, this.icon, this.route);
 }
 
-List<_NavItem> _navItems() {
-  return const [
-    _NavItem('HOME', Icons.home_rounded, '/home'),
-    _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
-    _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
+List<_NavItem> _navItems(bool isLoggedIn) {
+  return [
+    const _NavItem('HOME', Icons.home_rounded, '/home'),
+    const _NavItem('FOP', Icons.bar_chart_rounded, '/fop'),
+    const _NavItem('PROFILE', Icons.account_circle_rounded, '/profile'),
+    if (isLoggedIn) const _NavItem('LOGOUT', Icons.logout_rounded, '/logout'),
   ];
 }
 
 int _currentIndex(String location) {
   if (location.startsWith('/fop')) return 1;
   if (location.startsWith('/profile')) return 2;
-  return 0;
+  return 0; // Default to home, logout doesn't have a persistent index
 }
 
-void _onTap(BuildContext context, int index, AuthProvider auth) {
-  final items = _navItems();
+void _onTap(BuildContext context, int index, AuthProvider auth) async {
+  final items = _navItems(auth.isLoggedIn);
   if (index < 0 || index >= items.length) return;
   final route = items[index].route;
+  
+  if (route == '/logout') {
+    await auth.logout();
+    if (context.mounted) context.go('/login');
+    return;
+  }
+
   if (!auth.isLoggedIn && route != '/home') {
     context.go('/login?target=${Uri.encodeComponent(route)}');
   } else {

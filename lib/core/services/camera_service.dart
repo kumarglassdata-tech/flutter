@@ -101,7 +101,7 @@ class CameraService extends ChangeNotifier with WidgetsBindingObserver {
 
       _controller = CameraController(
         selectedCamera,
-        ResolutionPreset.medium,
+        ResolutionPreset.low, // Changed from medium to low for faster uploads
         enableAudio: false,
         imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg,
       );

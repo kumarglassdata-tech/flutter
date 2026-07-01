@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
 import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
+import 'package:smartglass_flutter/core/services/notification_service.dart' as import_notification;
 
 // Import New Production Architecture
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
@@ -259,6 +260,7 @@ class SessionProvider extends ChangeNotifier {
   bool _isStartingRuntime = false;
   late final VideoUploadSourceAdapter _videoUploadAdapter;
   Timer? _healthProbeTimer;
+  DateTime? _lastNotificationTime;
 
   // New Architecture Entities
   late final SourceManager sourceManager;
@@ -420,11 +422,23 @@ class SessionProvider extends ChangeNotifier {
 
   late Future<void> _audioInitFuture;
 
+  bool _isListeningStarted = false;
+
   /// Called after permissions are explicitly granted in the UI
   Future<void> startAlwaysListening() async {
+    if (_isListeningStarted) return;
+    _isListeningStarted = true;
     await _audioInitFuture;
     await audioStreamManager.startVad();
     _addLog('Always-Listening mode activated.');
+  }
+
+  /// Called when app goes to background
+  Future<void> stopAlwaysListening() async {
+    if (!_isListeningStarted) return;
+    _isListeningStarted = false;
+    await audioStreamManager.stopVad();
+    _addLog('Always-Listening mode paused.');
   }
 
   Timer? _voiceNluTimer;
@@ -495,6 +509,15 @@ class SessionProvider extends ChangeNotifier {
 
       final bcpJson = statusData['bcp'] ?? <String, dynamic>{};
       if (bcpJson.isNotEmpty) {
+        // Inject current salient objects if the voice intent doesn't have any
+        if (bcpJson['top_salient_objects'] == null || (bcpJson['top_salient_objects'] as List).isEmpty) {
+           final lastSalience = _state.lastBIEFrame?.salienceScore ?? 1.0;
+           bcpJson['top_salient_objects'] = _state.topSalientObjects.map((obj) => {
+             'class_name': obj,
+             'salience_score': lastSalience,
+           }).toList();
+        }
+
         final audioBieFrame = BIEFrame.fromJson(bcpJson);
         _state = _state.copyWith(lastBIEFrame: audioBieFrame);
         
@@ -502,10 +525,26 @@ class SessionProvider extends ChangeNotifier {
         final sharedState = <String, dynamic>{};
         pipelineCoordinator.ecomStep.execute(audioBieFrame, sharedState).then((ecomRes) {
           if (ecomRes.isSuccess && ecomRes.output != null) {
+              final newSuggestions = ecomRes.output!.suggestions;
+              final newIds = newSuggestions.map((e) => e.id).toSet();
+              final oldIds = _state.suggestedProducts.map((e) => e.id).toSet();
+              final validLinks = newSuggestions.where((s) => s.id.startsWith('http://') || s.id.startsWith('https://')).toList();
+              
               _state = _state.copyWith(
                 lastEcomResponse: ecomRes.output,
-                suggestedProducts: ecomRes.output!.suggestions,
+                suggestedProducts: newSuggestions.isNotEmpty ? newSuggestions : _state.suggestedProducts,
               );
+              
+              if (!oldIds.containsAll(newIds) && validLinks.isNotEmpty) {
+                final now = DateTime.now();
+                if (_lastNotificationTime == null || now.difference(_lastNotificationTime!).inSeconds > 120) {
+                  _lastNotificationTime = now;
+                  import_notification.NotificationService().showProductRecommendationNotification(
+                    title: 'Product Link Found',
+                    body: 'A buy link for ${validLinks.first.name} is available!',
+                  );
+                }
+              }
               notifyListeners();
           }
         });
@@ -978,6 +1017,21 @@ class SessionProvider extends ChangeNotifier {
 
     if (ecomOutput?.suggestions != null && ecomOutput!.suggestions.isNotEmpty) {
       _saveProducts(ecomOutput.suggestions);
+      
+      final newIds = ecomOutput!.suggestions.map((e) => e.id).toSet();
+      final oldIds = _state.suggestedProducts.map((e) => e.id).toSet();
+      final validLinks = ecomOutput.suggestions.where((s) => s.id.startsWith('http://') || s.id.startsWith('https://')).toList();
+      
+      if (!oldIds.containsAll(newIds) && validLinks.isNotEmpty) {
+        final now = DateTime.now();
+        if (_lastNotificationTime == null || now.difference(_lastNotificationTime!).inSeconds > 120) {
+          _lastNotificationTime = now;
+          import_notification.NotificationService().showProductRecommendationNotification(
+            title: 'Product Link Found',
+            body: 'A buy link for ${validLinks.first.name} is available!',
+          );
+        }
+      }
     }
 
     final rawStatuses = result['engine_status'] as Map<String, EngineStatus>? ?? const <String, EngineStatus>{};
@@ -1028,11 +1082,7 @@ class SessionProvider extends ChangeNotifier {
       engineStatuses: rawStatuses,
     );
 
-    final now = DateTime.now();
-    if (now.difference(_lastNotifyTime).inMilliseconds > 200) {
-      _lastNotifyTime = now;
-      notifyListeners();
-    }
+    notifyListeners();
   }
 
   Map<String, dynamic> _makeJsonEncodable(Map<String, dynamic> input) {

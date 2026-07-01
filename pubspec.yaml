@@ -66,6 +66,7 @@ dependencies:
     git:
       url: https://github.com/char5742/flutter_silero_vad.git
   path_provider: ^2.1.6
+  flutter_local_notifications: ^22.0.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -45,6 +45,10 @@ class EcomClient {
             'POST /inp Request',
             jsonPayload: body,
           );
+          print("========================================");
+          print("ECOM INPUT TO /inp:");
+          print(body);
+          print("========================================");
 
           final inputResponse = await _client
               .post(
@@ -73,6 +77,10 @@ class EcomClient {
             'POST /inp Response',
             jsonPayload: inputResponse.body,
           );
+          print("========================================");
+          print("ECOM OUTPUT FROM /inp:");
+          print(inputResponse.body);
+          print("========================================");
 
           onDiagnosticLog?.call('EcomClient', 'GET parallel requests starting');
           
@@ -95,8 +103,22 @@ class EcomClient {
           Map<String, dynamic> combinedResponse = {};
           
           try {
+            final parsedInput = jsonDecode(inputResponse.body);
+            if (parsedInput is Map<String, dynamic>) {
+              combinedResponse.addAll(parsedInput);
+            }
+          } catch (_) {}
+          
+          try {
             if (responses[0].statusCode == 200) {
-              combinedResponse.addAll(jsonDecode(responses[0].body) as Map<String, dynamic>);
+              final recommendData = jsonDecode(responses[0].body) as Map<String, dynamic>;
+              if (combinedResponse['suggestions'] == null) {
+                combinedResponse['suggestions'] = recommendData['suggestions'] ?? recommendData['mall_feed'];
+              } else if (recommendData['suggestions'] != null) {
+                (combinedResponse['suggestions'] as List).addAll(recommendData['suggestions'] as List);
+              } else if (recommendData['mall_feed'] != null) {
+                (combinedResponse['suggestions'] as List).addAll(recommendData['mall_feed'] as List);
+              }
             }
           } catch (_) {}
 
@@ -174,6 +196,11 @@ class EcomClient {
   Map<String, dynamic> _decodeBuyResponse(String responseBody) {
     final decoded = jsonDecode(responseBody);
     if (decoded is Map<String, dynamic>) {
+      if (decoded['suggestions'] == null && decoded['ad_content'] != null) {
+        decoded['suggestions'] = [decoded['ad_content']];
+      } else if (decoded['suggestions'] == null && decoded['action_link'] != null) {
+        decoded['suggestions'] = [decoded];
+      }
       return decoded;
     }
     if (decoded is List) {

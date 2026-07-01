@@ -15,7 +15,8 @@ migrate.working.dir/
 *.ipr
 *.iws
 .idea/
-
+Myna.V.0.1/
+*.apk
 # Flutter/Dart/Pub related
 .dart_tool/
 .flutter-plugins
@@ -68,6 +69,7 @@ migrate.working.dir/
 .pub-cache/
 .pub/
 build/
+*.apk
 
 # Android
 android/.gradle/

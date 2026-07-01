@@ -131,13 +131,16 @@ class AudioStreamManager {
       encoder: AudioEncoder.pcm16bits,
       sampleRate: 16000,
       numChannels: 1,
+      autoGain: true, // Dynamically boosts volume on quiet mics (like Redmi)
+      echoCancel: true, // Hardware echo cancellation
+      noiseSuppress: true, // Hardware noise suppression
     ));
 
     _micSubscription = stream.listen((Uint8List chunk) async {
       if (!_vadActive) return;
       
-      // PERMANENT ECHO FIX: Completely drop microphone frames while the AI is speaking.
-      if (_isPlaying) {
+      // PERMANENT ECHO FIX: Completely drop microphone frames while the AI is speaking or waiting for MIIS.
+      if (_isPlaying || _waitingForMIISResponse) {
          _audioAccumulator.clear();
          return;
       }
@@ -175,7 +178,7 @@ class AudioStreamManager {
 
         _debugFrameCount++;
         if (_debugFrameCount >= 30) {
-          // debugPrint('[VAD] Mic chunk received. Max amplitude: ${maxAmplitude.toStringAsFixed(4)}');
+          debugPrint('[VAD] Mic chunk received. Max amplitude: ${maxAmplitude.toStringAsFixed(4)}');
           _debugFrameCount = 0;
         }
 
@@ -188,7 +191,8 @@ class AudioStreamManager {
           }
 
           // Fallback: If the neural net is unsure but the volume is very loud, force it active
-          if (!isActive && maxAmplitude > 0.5) {
+          // Note: Set to 0.1 because Redmi Note 9 Pro max speaking volume is only 0.14
+          if (!isActive && maxAmplitude > 0.1) {
             isActive = true;
           }
 
@@ -213,9 +217,17 @@ class AudioStreamManager {
           } else {
             if (_isSpeaking) {
               _silenceTimer ??= Timer(_kSilenceTimeout, () {
-                if (_isSpeaking) {
                   _isSpeaking = false;
                   _waitingForMIISResponse = true;
+                  
+                  // SAFETY TIMEOUT: If backend completely fails to respond within 8 seconds, unlock the mic.
+                  Timer(const Duration(seconds: 8), () {
+                    if (_waitingForMIISResponse) {
+                      debugPrint('[VAD] MIIS response timeout! Forcing mic unlock.');
+                      _waitingForMIISResponse = false;
+                    }
+                  });
+                  
                   _isSpeakingController.add(false);
                   debugPrint('[VAD] Speech ended (silence timeout), waiting for MIIS...');
                   _safeSinkAdd(jsonEncode({'type': 'end_of_speech'}));

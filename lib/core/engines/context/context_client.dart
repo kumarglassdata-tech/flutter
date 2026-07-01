@@ -84,6 +84,10 @@ class ContextClient {
             throw Exception(errorMsg);
           }
 
+          // Wait just a tiny bit for the backend YOLO model to finish processing the image we just sent
+          // Otherwise, /predict might return the stale prediction from the PREVIOUS frame, causing a 2-second lag!
+          await Future.delayed(const Duration(milliseconds: 250));
+
           // POST /inp only returns a success message. We must call GET /predict to get the actual boundaries.
           final predictUrl = Uri.parse('$base/predict');
           final predictRes = await _client.get(predictUrl).timeout(const Duration(seconds: 4));
