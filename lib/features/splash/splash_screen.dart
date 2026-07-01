@@ -15,7 +15,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    Future.delayed(const Duration(milliseconds: 800), () {
       if (mounted) {
         context.go('/home');
       }
@@ -73,10 +73,10 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(duration: 800.ms)
+                  .fadeIn(duration: 400.ms)
                   .scale(
                       begin: const Offset(0.8, 0.8),
-                      duration: 1000.ms,
+                      duration: 400.ms,
                       curve: Curves.easeOutCubic),
 
               const SizedBox(height: 40),
@@ -100,8 +100,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 500.ms, duration: 800.ms)
-                  .slideY(begin: 0.2, duration: 800.ms, curve: Curves.easeOut),
+                  .fadeIn(delay: 200.ms, duration: 400.ms)
+                  .slideY(begin: 0.2, duration: 400.ms, curve: Curves.easeOut),
 
               const SizedBox(height: 16),
 
@@ -116,7 +116,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 800.ms, duration: 600.ms),
+                  .fadeIn(delay: 400.ms, duration: 300.ms),
 
               const SizedBox(height: 6),
 
@@ -131,7 +131,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 1000.ms, duration: 600.ms),
+                  .fadeIn(delay: 500.ms, duration: 300.ms),
 
               const Spacer(flex: 4),
 
@@ -145,7 +145,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 1200.ms, duration: 600.ms),
+                  .fadeIn(delay: 600.ms, duration: 200.ms),
 
               const SizedBox(height: 12),
 
@@ -162,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               )
                   .animate()
-                  .fadeIn(delay: 1300.ms, duration: 600.ms),
+                  .fadeIn(delay: 600.ms, duration: 200.ms),
 
               const SizedBox(height: 48), // Bottom padding
             ],
