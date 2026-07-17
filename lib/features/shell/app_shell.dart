@@ -327,16 +327,16 @@ class _AppDrawer extends StatelessWidget {
           _drawerItem(context, Icons.bluetooth, 'Pair Devices', '/devices'),
           _drawerItem(context, Icons.home_rounded, 'Home', '/home'),
           _drawerItem(context, Icons.bar_chart_rounded, 'Live Session (FOP)', '/fop'),
-          _drawerItem(context, Icons.devices_rounded, 'Connected Devices', '/devices'),
+          _drawerItem(context, Icons.devices_rounded, 'Connected Devices', '/connected-devices'),
           if (auth.isAdmin) ...[
             _drawerItem(context, Icons.monitor_heart_rounded, 'Diagnostics', '/diagnostics'),
             _drawerItem(context, Icons.analytics_rounded, 'Engine Inspector', '/engine-inspector'),
+            _drawerItem(context, Icons.science_rounded, 'Context Engine Tester', '/test-context'),
           ],
           _drawerItem(context, Icons.settings_rounded, 'Settings', '/settings'),
 
           _drawerItem(context, Icons.account_circle_rounded, 'Profile', '/profile'),
           _drawerItem(context, Icons.info_rounded, 'About', '/about'),
-          const Spacer(),
           const Divider(),
           if (auth.isLoggedIn)
             ListTile(

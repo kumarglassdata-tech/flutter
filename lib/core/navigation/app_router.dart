@@ -10,12 +10,16 @@ import 'package:smartglass_flutter/features/profile/profile_screen.dart';
 import 'package:smartglass_flutter/features/profile/edit_info_screen.dart';
 import 'package:smartglass_flutter/features/devices/devices_screen.dart';
 import 'package:smartglass_flutter/features/devices/device_control_screen.dart';
+import 'package:smartglass_flutter/features/devices/connected_devices_screen.dart';
 import 'package:smartglass_flutter/features/diagnostics/diagnostics_screen.dart';
 import 'package:smartglass_flutter/features/settings/settings_screen.dart';
 import 'package:smartglass_flutter/features/orders/orders_screen.dart';
 import 'package:smartglass_flutter/features/about/about_screen.dart';
 import 'package:smartglass_flutter/features/engine_inspector/engine_inspector_screen.dart';
 import 'package:smartglass_flutter/features/interested/interested_screen.dart';
+import 'package:smartglass_flutter/features/debug/test_context_engine_screen.dart';
+
+import 'package:smartglass_flutter/features/onboarding/personalize_feed_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -23,21 +27,34 @@ final _shellNavigatorKey = GlobalKey<NavigatorState>();
 GoRouter createRouter(AuthProvider auth) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
+    refreshListenable: auth,
     initialLocation: '/splash',
     redirect: (context, state) {
       final loggedIn = auth.isLoggedIn;
+      final hasPreferences = auth.hasPreferences;
       final isLogin = state.matchedLocation.startsWith('/login');
       final isSplash = state.matchedLocation == '/splash';
       final isAbout = state.matchedLocation == '/about';
       final isHome = state.matchedLocation == '/home';
+      final isPersonalize = state.matchedLocation == '/personalize-feed';
 
       // Always allow splash, login, about, and home
-      if (isSplash || isAbout || isHome || isLogin) return null;
+      if (isSplash || isAbout || isLogin) return null;
       
-      // If not logged in and trying to access a protected route
+      // If not logged in and trying to access a protected route (home is protected but we used to let it slide? No, let's protect it)
       if (!loggedIn) {
         final target = state.matchedLocation;
         return '/login?target=${Uri.encodeComponent(target)}';
+      }
+
+      // If logged in, but no preferences, force to personalize
+      if (loggedIn && !hasPreferences && !isPersonalize) {
+        return '/personalize-feed';
+      }
+
+      // If logged in, has preferences, and tries to go to personalize, send to home
+      if (loggedIn && hasPreferences && isPersonalize) {
+        return '/home';
       }
 
       // If logged in but trying to access admin-only routes and is not admin
@@ -54,6 +71,13 @@ GoRouter createRouter(AuthProvider auth) {
         path: '/splash',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => const SplashScreen(),
+      ),
+
+      // Personalize Feed — no shell
+      GoRoute(
+        path: '/personalize-feed',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const PersonalizeFeedScreen(),
       ),
 
       // Login — no shell
@@ -94,13 +118,13 @@ GoRouter createRouter(AuthProvider auth) {
         builder: (context, state) => const EditInfoScreen(),
       ),
 
-      // Device Control — no shell
+      // Device Control — no shell, accessible via /device/:mac
       GoRoute(
-        path: '/devices/:deviceId',
+        path: '/device/:deviceId',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
           final deviceId = state.pathParameters['deviceId'] ?? 'Unknown';
-          return DeviceControlScreen(deviceId: deviceId);
+          return DeviceControlScreen(deviceId: Uri.decodeComponent(deviceId));
         },
       ),
 
@@ -126,6 +150,10 @@ GoRouter createRouter(AuthProvider auth) {
             builder: (context, state) => const DevicesScreen(),
           ),
           GoRoute(
+            path: '/connected-devices',
+            builder: (context, state) => const ConnectedDevicesScreen(),
+          ),
+          GoRoute(
             path: '/diagnostics',
             builder: (context, state) => const DiagnosticsScreen(),
           ),
@@ -136,6 +164,10 @@ GoRouter createRouter(AuthProvider auth) {
           GoRoute(
             path: '/engine-inspector',
             builder: (context, state) => const EngineInspectorScreen(),
+          ),
+          GoRoute(
+            path: '/test-context',
+            builder: (context, state) => const TestContextEngineScreen(),
           ),
         ],
       ),

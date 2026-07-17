@@ -13,7 +13,6 @@ class SourceInputSelector extends StatelessWidget {
 
     final sources = [
       (SourceType.phone, 'Phone Camera', Icons.phone_android_rounded),
-      (SourceType.meta, 'Meta Glasses', Icons.remove_red_eye_rounded),
       (SourceType.videoUpload, 'File Ingestion', Icons.cloud_upload_rounded),
       (SourceType.mock, 'Simulated Ingest', Icons.auto_awesome_rounded),
     ];
@@ -67,11 +66,7 @@ class SourceInputSelector extends StatelessWidget {
                       ),
                       selected: isSelected,
                       onSelected: (_) async {
-                        if (type == SourceType.meta) {
-                          await session.connectToMetaGlasses();
-                        } else {
-                          await session.sourceManager.switchSource(type);
-                        }
+                        await session.sourceManager.switchSource(type);
                       },
                       labelStyle: TextStyle(
                         fontSize: 12,

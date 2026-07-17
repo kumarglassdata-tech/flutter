@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
@@ -13,23 +14,13 @@ class DevicesScreen extends StatefulWidget {
   State<DevicesScreen> createState() => _DevicesScreenState();
 }
 
-class _DevicesScreenState extends State<DevicesScreen>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
-
+class _DevicesScreenState extends State<DevicesScreen> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SessionProvider>().startDiscovery();
     });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -39,413 +30,304 @@ class _DevicesScreenState extends State<DevicesScreen>
     final isScanning =
         state.bleConnectionState == GlassesConnectionState.scanning;
 
-    final bleDevices =
-        state.discoveredDevices.where((d) => d.linkType != DeviceLinkType.wifi).toList();
-    final wifiDevices =
-        state.discoveredDevices.where((d) => d.linkType == DeviceLinkType.wifi).toList();
-
-    final canUseMetaSdk = state.metaSdkAvailable;
-    final metaDevice = canUseMetaSdk
-      ? state.discoveredDevices
-        .where((d) => d.name.contains('RB') || d.name.contains('Meta'))
-        .firstOrNull
-      : null;
-
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: const Color(0xFF0F172A), // Deep dark slate
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.menu_rounded), onPressed: AppShell.openDrawer),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Connect Glasses',
-                style: TextStyle(fontWeight: FontWeight.w700)),
-            Text(session.scanStatus,
-                style: const TextStyle(
-                    fontSize: 11, color: AppTheme.onSurfaceVariant)),
-          ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Colors.white),
+          onPressed: AppShell.openDrawer,
         ),
+        title: const Text('Pair Devices',
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 1.2)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => session.startDiscovery(),
+            icon: Icon(
+              isScanning ? Icons.stop_circle_outlined : Icons.radar_rounded,
+              color: isScanning ? Colors.blueAccent : Colors.white,
+            ),
+            onPressed: () {
+              if (isScanning) {
+                session.stopDiscovery();
+              } else {
+                session.startDiscovery();
+              }
+            },
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Meta Glasses Banner
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          // Background ambient glows
+          Positioned(
+            top: -100,
+            right: -100,
             child: Container(
+              width: 300,
+              height: 300,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFDBEAFE), Color(0xFFE0F2FE), Color(0xFFF0F9FF)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Ray-Ban Meta Glasses',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF1E40AF))),
-                  const SizedBox(height: 8),
-                  if (metaDevice != null) ...[
-                    Text(
-                      'Found: ${metaDevice.name} ${metaDevice.isBonded ? "(paired)" : ""}',
-                      style: const TextStyle(color: Color(0xFF166534)),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await session.connectToMetaGlasses();
-                          if (!context.mounted) return;
-                          context.push('/devices/${Uri.encodeComponent(metaDevice.address)}');
-                        },
-                        child: Text('Connect ${metaDevice.name}'),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          await session.registerMetaGlasses();
-                        },
-                        child: const Text('Register with Meta View/AI'),
-                      ),
-                    ),
-                  ] else ...[
-                    const Text(
-                      'Meta SDK is not active on this runtime. Use Android device build for real Meta connect, or continue with local camera fallback.',
-                      style: TextStyle(color: Color(0xFF3B5F8F), fontSize: 12),
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          await session.connectToMetaGlasses();
-                        },
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF1E40AF)),
-                        child: const Text('Try Meta connect / fallback'),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          await session.startDiscovery();
-                        },
-                        child: const Text('Rescan devices'),
-                      ),
-                    ),
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.blueAccent.withOpacity(0.15),
+                    Colors.transparent
                   ],
-                ],
-              ),
-            ).animate().fadeIn(duration: 400.ms),
-          ),
-
-          if (isScanning)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: LinearProgressIndicator(color: AppTheme.primary),
-            ),
-
-          // Tab Row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TabBar(
-              controller: _tabController,
-              tabs: [
-                Tab(text: 'Bluetooth (${bleDevices.length})'),
-                Tab(text: 'Wi-Fi (${wifiDevices.length})'),
-              ],
-              labelColor: AppTheme.primary,
-              unselectedLabelColor: AppTheme.onSurfaceVariant,
-              indicatorColor: AppTheme.primary,
-            ),
-          ),
-
-          // Device List
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _DeviceList(
-                    devices: bleDevices,
-                    isScanning: isScanning,
-                    isWifi: false,
-                    scanStatus: session.scanStatus,
-                    state: state,
-                    onConnect: (addr) {
-                      session.connectToDevice(addr);
-                      context.push('/devices/${Uri.encodeComponent(addr)}');
-                    }),
-                _DeviceList(
-                    devices: wifiDevices,
-                    isScanning: false,
-                    isWifi: true,
-                    scanStatus: session.scanStatus,
-                    state: state,
-                    onConnect: (addr) {}),
-              ],
-            ),
-          ),
-
-          // Connection status
-          if (state.bleConnectionState != GlassesConnectionState.disconnected)
-            _ConnectionStatusBar(state: state, onDisconnect: () => session.stopRuntime()),
-        ],
-      ),
-    );
-  }
-}
-
-class _DeviceList extends StatelessWidget {
-  final List<GlassesDevice> devices;
-  final bool isScanning;
-  final bool isWifi;
-  final String scanStatus;
-  final SessionState state;
-  final void Function(String) onConnect;
-
-  const _DeviceList({
-    required this.devices,
-    required this.isScanning,
-    required this.isWifi,
-    required this.scanStatus,
-    required this.state,
-    required this.onConnect,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (devices.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isScanning ? Icons.bluetooth_searching_rounded : Icons.bluetooth_disabled_rounded,
-              size: 64,
-              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isScanning ? 'Searching nearby…' : 'No devices found yet',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleMedium
-                  ?.copyWith(color: AppTheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                isWifi
-                    ? 'Enable Wi-Fi to see nearby networks.'
-                    : 'Turn on Bluetooth and open glasses pairing mode.',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppTheme.onSurfaceVariant, fontSize: 13),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: devices.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (_, i) {
-        final d = devices[i];
-        final isConnected = state.bleConnectionState == GlassesConnectionState.connected &&
-            (state.connectedDeviceName == d.name ||
-             state.connectedDeviceName == d.address);
-        final isMeta = d.name.contains('RB') || d.name.contains('Meta');
-        return _DeviceCard(
-          device: d,
-          isConnected: isConnected,
-          isMetaGlasses: isMeta,
-          onTap: () => onConnect(d.address),
-        ).animate().fadeIn(delay: Duration(milliseconds: i * 80), duration: 300.ms);
-      },
-    );
-  }
-}
-
-class _DeviceCard extends StatelessWidget {
-  final GlassesDevice device;
-  final bool isConnected;
-  final bool isMetaGlasses;
-  final VoidCallback onTap;
-
-  const _DeviceCard({
-    required this.device,
-    required this.isConnected,
-    required this.isMetaGlasses,
-    required this.onTap,
-  });
-
-  String get _linkLabel {
-    switch (device.linkType) {
-      case DeviceLinkType.wifi:
-        return 'Wi-Fi';
-      case DeviceLinkType.classicBt:
-        return 'Bluetooth Classic';
-      case DeviceLinkType.ble:
-        return 'BLE';
-      case DeviceLinkType.metaDat:
-        return 'Meta DAT';
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: isConnected
-          ? Theme.of(context).colorScheme.primaryContainer
-          : isMetaGlasses
-              ? const Color(0xFFE8F5E9)
-              : Colors.white,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  device.linkType == DeviceLinkType.wifi
-                      ? Icons.wifi_rounded
-                      : Icons.bluetooth_rounded,
-                  color: AppTheme.primary,
-                  size: 22,
+                  stops: const [0.2, 1.0],
                 ),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(device.name,
-                            style: const TextStyle(fontWeight: FontWeight.w700)),
-                        if (isMetaGlasses) ...[
-                          const SizedBox(width: 6),
-                          const _Chip(label: 'Meta', color: Color(0xFF166534)),
-                        ],
-                        if (device.isBonded) ...[
-                          const SizedBox(width: 4),
-                          const Icon(Icons.star_rounded,
-                              size: 14, color: Color(0xFFF59E0B)),
-                        ],
-                      ],
-                    ),
-                    Text(_linkLabel,
-                        style: const TextStyle(
-                            color: AppTheme.onSurfaceVariant, fontSize: 12)),
-                    Text(device.address,
-                        style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                    if (device.rssi != 0)
-                      Text('Signal: ${device.rssi} dBm',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                  ],
-                ),
-              ),
-              if (isConnected)
-                const Text('Connected',
-                    style: TextStyle(
-                        color: Color(0xFF16A34A),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12))
-              else
-                const Icon(Icons.chevron_right_rounded, color: Colors.grey),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
 
-class _Chip extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _Chip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(label,
-          style: TextStyle(
-              color: color, fontSize: 10, fontWeight: FontWeight.w700)),
-    );
-  }
-}
-
-class _ConnectionStatusBar extends StatelessWidget {
-  final SessionState state;
-  final VoidCallback onDisconnect;
-
-  const _ConnectionStatusBar({required this.state, required this.onDisconnect});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
-        children: [
-          const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
+          SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Status: ${state.bleConnectionState.name}',
-                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                if (state.connectedDeviceName != null)
-                  Text(state.connectedDeviceName!,
-                      style: const TextStyle(
-                          color: AppTheme.onSurfaceVariant, fontSize: 12)),
+                // Scanning Status Header
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isScanning ? Colors.blueAccent : Colors.grey,
+                        ),
+                      )
+                          .animate(target: isScanning ? 1 : 0)
+                          .scale(
+                              begin: const Offset(1, 1),
+                              end: const Offset(1.5, 1.5))
+                          .fade(begin: 1, end: 0.5)
+                          .then(delay: 500.ms),
+                      const SizedBox(width: 12),
+                      Text(
+                        isScanning
+                            ? 'Scanning for Titan Glasses...'
+                            : 'Scanner Paused',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Device List or Ripple
+                Expanded(
+                  child: state.discoveredDevices.isEmpty && isScanning
+                      ? _buildScanningRipple()
+                      : (state.discoveredDevices.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.bluetooth_disabled,
+                                      size: 64,
+                                      color: Colors.white.withOpacity(0.2)),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    "No devices found. Tap scan to search.",
+                                    style: TextStyle(
+                                        color: Colors.white.withOpacity(0.5)),
+                                  )
+                                ],
+                              ).animate().fade(duration: 800.ms),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(24),
+                              itemCount: state.discoveredDevices.length,
+                              itemBuilder: (context, index) {
+                                final device = state.discoveredDevices[index];
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _buildGlassmorphicCard(
+                                    child: ListTile(
+                                      contentPadding: const EdgeInsets.all(16),
+                                      leading: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.1),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(Icons.bluetooth,
+                                            color: Colors.white),
+                                      ),
+                                      title: Text(
+                                        device.name,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                          fontSize: 18,
+                                        ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'MAC: \${device.address}',
+                                            style: TextStyle(
+                                                color: Colors.white
+                                                    .withOpacity(0.6),
+                                                fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
+                                      trailing: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.white,
+                                          foregroundColor: Colors.black,
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(20)),
+                                        ),
+                                        onPressed: () {
+                                          session.connectToDevice(device.address);
+                                          // Navigate to the Connected Devices dashboard
+                                          context.go('/connected-devices');
+                                        },
+                                        child: const Text('Connect'),
+                                      ),
+                                    ),
+                                  )
+                                      .animate()
+                                      .slideY(
+                                          begin: 0.1,
+                                          duration: 400.ms,
+                                          curve: Curves.easeOut)
+                                      .fade(),
+                                );
+                              },
+                            )),
+                ),
               ],
             ),
           ),
-          TextButton(
-            onPressed: onDisconnect,
-            child: const Text('Disconnect',
-                style: TextStyle(color: Color(0xFFDC2626))),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScanningRipple() {
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Ripple 3
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: Colors.blueAccent.withOpacity(0.1), width: 2),
+            ),
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .scale(
+                  begin: const Offset(0.5, 0.5),
+                  end: const Offset(2.5, 2.5),
+                  duration: 2500.ms)
+              .fade(begin: 1, end: 0, duration: 2500.ms),
+
+          // Ripple 2
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: Colors.blueAccent.withOpacity(0.3), width: 2),
+            ),
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .scale(
+                  begin: const Offset(0.5, 0.5),
+                  end: const Offset(2.0, 2.0),
+                  duration: 2500.ms,
+                  delay: 800.ms)
+              .fade(begin: 1, end: 0, duration: 2500.ms, delay: 800.ms),
+
+          // Ripple 1
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: Colors.blueAccent.withOpacity(0.5), width: 3),
+            ),
+          )
+              .animate(onPlay: (controller) => controller.repeat())
+              .scale(
+                  begin: const Offset(0.5, 0.5),
+                  end: const Offset(1.5, 1.5),
+                  duration: 2500.ms,
+                  delay: 1600.ms)
+              .fade(begin: 1, end: 0, duration: 2500.ms, delay: 1600.ms),
+
+          // Center Logo (Smart Myna Bird representation)
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF0F172A), // Dark center
+              border: Border.all(color: Colors.blueAccent, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.blueAccent.withOpacity(0.5),
+                  blurRadius: 30,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: const Icon(Icons.flutter_dash_rounded,
+                size: 40, color: Colors.blueAccent),
+          )
+              .animate(onPlay: (controller) => controller.repeat(reverse: true))
+              .scale(
+                  begin: const Offset(0.9, 0.9),
+                  end: const Offset(1.1, 1.1),
+                  duration: 1200.ms),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassmorphicCard({required Widget child}) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B).withOpacity(0.6), // Solid dark overlay
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: child,
+        ),
       ),
     );
   }

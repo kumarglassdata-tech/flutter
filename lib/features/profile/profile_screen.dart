@@ -32,6 +32,12 @@ class ProfileScreen extends StatelessWidget {
                   colors: [Color(0xFF3B82F6), Color(0xFF1E40AF)],
                 ),
                 shape: BoxShape.circle,
+                image: auth.photoUrl.isNotEmpty
+                    ? DecorationImage(
+                        image: NetworkImage(auth.photoUrl),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
                 boxShadow: [
                   BoxShadow(
                     color: AppTheme.primary.withValues(alpha: 0.3),
@@ -40,17 +46,19 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Center(
-                child: Text(
-                  auth.username.isNotEmpty
-                      ? auth.username.substring(0, 1).toUpperCase()
-                      : 'U',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800),
-                ),
-              ),
+              child: auth.photoUrl.isEmpty
+                  ? Center(
+                      child: Text(
+                        auth.username.isNotEmpty
+                            ? auth.username.substring(0, 1).toUpperCase()
+                            : (auth.email.isNotEmpty ? auth.email.substring(0, 1).toUpperCase() : 'U'),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 40,
+                            fontWeight: FontWeight.w800),
+                      ),
+                    )
+                  : null,
             ).animate().fadeIn(duration: 400.ms).scale(
                 begin: const Offset(0.7, 0.7), duration: 500.ms,
                 curve: Curves.easeOutBack),

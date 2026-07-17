@@ -4,27 +4,29 @@ import 'package:smartglass_flutter/core/navigation/app_router.dart';
 import 'package:smartglass_flutter/core/providers/auth_provider.dart';
 import 'package:smartglass_flutter/core/providers/session_provider.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
-import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
+import 'package:smartglass_flutter/core/services/titan_sdk_service.dart';
 import 'package:smartglass_flutter/core/theme/app_theme.dart';
+import 'package:smartglass_flutter/core/services/location_service.dart';
 
 import 'dart:ui';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-void main() async {
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize env and Wakelock before constructing providers
+  // otherwise EnvConfig will throw NotInitializedError and silently crash Dart
   await dotenv.load(fileName: ".env");
   await WakelockPlus.enable();
 
-  // Load persisted state before app starts
+  // Create providers synchronously
   final auth = AuthProvider();
   final settings = SettingsProvider();
-  await auth.load();
-  await settings.load();
-
   final cameraService = CameraService();
   final session = SessionProvider(
     cameraService,
-    metaSdkService: const MetaGlassesSdkService(),
+    titanSdkService: TitanSdkService(),
   );
 
   // Hook global platform and framework errors to stream directly into the Diagnostics tab
@@ -60,6 +62,7 @@ class SmartGlassApp extends StatelessWidget {
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider.value(value: settings),
         ChangeNotifierProvider.value(value: session),
+        ChangeNotifierProvider(create: (_) => LocationService()),
       ],
       child: Builder(
         builder: (context) {

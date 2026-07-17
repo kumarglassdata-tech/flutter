@@ -32,6 +32,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Profile',
             delay: 0,
             children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                child: Center(
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundColor: AppTheme.primary.withOpacity(0.2),
+                    backgroundImage: auth.photoUrl.isNotEmpty ? NetworkImage(auth.photoUrl) : null,
+                    child: auth.photoUrl.isEmpty
+                        ? Text(
+                            auth.username.isNotEmpty 
+                                ? auth.username[0].toUpperCase() 
+                                : (auth.email.isNotEmpty ? auth.email[0].toUpperCase() : '?'),
+                            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                          )
+                        : null,
+                  ),
+                ),
+              ),
               _SettingsInfo('Username', auth.username.isNotEmpty ? auth.username : 'Not logged in'),
               _SettingsInfo('Email', auth.email.isNotEmpty ? auth.email : 'Not logged in'),
             ],
@@ -57,8 +75,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: 'Developer Validation',
             delay: 400,
             children: [
-              _SettingsToggle('Use Mock Meta Stream', settings.useMockMeta,
-                  (v) => settings.setUseMockMeta(v)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: Column(

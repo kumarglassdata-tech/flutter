@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Camera and Audio -->
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -9,7 +10,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
 
-    <!-- Bluetooth (API 31+) -->
+    <!-- BLE / Classic Bluetooth -->
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
@@ -19,33 +20,34 @@
     <!-- Hardware features -->
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
     <uses-feature android:name="android.hardware.wifi" android:required="false"/>
+    <uses-feature android:name="android.hardware.wifi.direct" android:required="true" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Location for BLE scanning -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
-    <!-- WiFi -->
+    <!-- WiFi / WiFi Direct, needed for album import and media download -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.NEARBY_WIFI_DEVICES" />
 
-    <!-- Internet (for Gemini API) -->
+    <!-- Internet -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
     <application
         android:label="Smart Myna"
         android:name=".SmartGlassApplication"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true"
+        android:requestLegacyExternalStorage="true"
+        tools:replace="android:allowBackup"
+        android:allowBackup="true"
 
-        <!-- Meta Wearables DAT: use 0 in Developer Mode; production ID from Wearables Developer Center -->
-        <meta-data
-            android:name="com.meta.wearable.mwdat.APPLICATION_ID"
-            android:value="0" />
-        <meta-data
-            android:name="com.meta.wearable.mwdat.ANALYTICS_OPT_OUT"
-            android:value="true" />
+        >
 
         <activity
             android:name=".MainActivity"
@@ -64,22 +66,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Meta AI registration callback -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="smartglass" />
-            </intent-filter>
         </activity>
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
+    
     <queries>
-        <package android:name="com.facebook.stella" />
-        <package android:name="com.meta.wearable.dat" />
-        <package android:name="com.meta.wearable.dat.externalsampleapps.cameraaccess" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
         </intent>

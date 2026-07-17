@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:smartglass_flutter/core/models/unified_input.dart';
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
 
-enum SourceType { meta, phone, laptop, mock, videoUpload }
+enum SourceType { phone, laptop, mock, videoUpload }
 
 class SourceManager extends ChangeNotifier {
   final Map<SourceType, SourceAdapter> _adapters;
@@ -58,10 +58,9 @@ class SourceManager extends ChangeNotifier {
     _healthSub = adapter.healthStream.listen((health) {
       _currentHealth = health;
       notifyListeners();
-
-      // Trigger auto-fallback if Meta fails
-      if (_activeType == SourceType.meta && health.status == SourceHealthStatus.disconnected) {
-        debugPrint('SourceManager: Meta disconnected! Executing auto-fallback to Phone.');
+      // Fallback logic for active source disconnecting
+      if (health.status == SourceHealthStatus.disconnected) {
+        debugPrint('SourceManager: Active source disconnected! Executing auto-fallback to Phone.');
         switchSource(SourceType.phone);
       }
     });

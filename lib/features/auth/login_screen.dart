@@ -14,28 +14,55 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isSignUpMode = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
+    _displayNameController.dispose();
     super.dispose();
   }
 
-  Future<void> _login() async {
+  void _toggleMode() {
+    setState(() {
+      _isSignUpMode = !_isSignUpMode;
+      _errorMessage = null;
+    });
+  }
+
+  Future<void> _submitEmailAuth() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _errorMessage = 'Email and password are required.');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     final auth = context.read<AuthProvider>();
-    final error =
-        await auth.login(_usernameController.text, _passwordController.text);
+    String? error;
+    
+    if (_isSignUpMode) {
+      final displayName = _displayNameController.text.trim().isEmpty 
+          ? email.split('@')[0] 
+          : _displayNameController.text.trim();
+      error = await auth.signUpWithEmail(email, password, displayName);
+    } else {
+      error = await auth.loginWithEmail(email, password);
+    }
 
     if (!mounted) return;
     setState(() => _isLoading = false);
@@ -43,8 +70,26 @@ class _LoginScreenState extends State<LoginScreen> {
     if (error != null) {
       setState(() => _errorMessage = error);
     } else {
-      final dest = widget.targetRoute ?? '/home';
-      context.go(dest);
+      context.go(widget.targetRoute ?? '/home');
+    }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final auth = context.read<AuthProvider>();
+    final error = await auth.loginWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (error != null) {
+      setState(() => _errorMessage = error);
+    } else {
+      context.go(widget.targetRoute ?? '/home');
     }
   }
 
@@ -98,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 32),
 
-                Text('Welcome Back!',
+                Text(_isSignUpMode ? 'Create Account' : 'Welcome Back!',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.w800,
                           color: AppTheme.onSurface,
@@ -109,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 4),
 
-                Text('Sign in to your Smart Myna account',
+                Text(_isSignUpMode ? 'Sign up for Smart Myna' : 'Sign in to your Smart Myna account',
                     style: Theme.of(context)
                         .textTheme
                         .bodyMedium
@@ -123,7 +168,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (_errorMessage != null)
                   Container(
                     padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFEDED),
                       borderRadius: BorderRadius.circular(12),
@@ -145,13 +190,27 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ).animate().fadeIn().shakeX(hz: 4, amount: 4),
 
-                // Username field
+                // Display Name field (Only in Sign Up Mode)
+                if (_isSignUpMode) ...[
+                  TextField(
+                    controller: _displayNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Full Name',
+                      prefixIcon: Icon(Icons.badge_outlined, color: AppTheme.primary),
+                    ),
+                    textInputAction: TextInputAction.next,
+                    onChanged: (_) => setState(() => _errorMessage = null),
+                  ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
+                  const SizedBox(height: 16),
+                ],
+
+                // Email field
                 TextField(
-                  controller: _usernameController,
+                  controller: _emailController,
                   decoration: const InputDecoration(
-                    labelText: 'Username or Email',
+                    labelText: 'Email Address',
                     prefixIcon:
-                        Icon(Icons.person_outline_rounded, color: AppTheme.primary),
+                        Icon(Icons.email_outlined, color: AppTheme.primary),
                   ),
                   textInputAction: TextInputAction.next,
                   keyboardType: TextInputType.emailAddress,
@@ -182,31 +241,32 @@ class _LoginScreenState extends State<LoginScreen> {
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
-                  onSubmitted: (_) => _login(),
+                  onSubmitted: (_) => _submitEmailAuth(),
                   onChanged: (_) => setState(() => _errorMessage = null),
                 )
                     .animate()
                     .fadeIn(delay: 500.ms, duration: 400.ms)
                     .slideY(begin: 0.2),
 
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton(
-                    onPressed: () {},
-                    child: const Text('Forgot Password?'),
-                  ),
-                ),
+                if (!_isSignUpMode)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      child: const Text('Forgot Password?'),
+                    ),
+                  )
+                else
+                  const SizedBox(height: 24),
 
                 const SizedBox(height: 8),
 
-                const SizedBox(height: 8),
-
-                // Login button
+                // Email Submit Button
                 SizedBox(
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading ? null : _submitEmailAuth,
                     child: _isLoading
                         ? const SizedBox(
                             width: 22,
@@ -214,72 +274,82 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2.5),
                           )
-                        : const Text('Sign In',
-                            style: TextStyle(
+                        : Text(_isSignUpMode ? 'Sign Up' : 'Sign In',
+                            style: const TextStyle(
                                 fontSize: 17, fontWeight: FontWeight.w700)),
                   ),
-                )
-                    .animate()
-                    .fadeIn(delay: 700.ms, duration: 400.ms),
+                ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
 
-                const SizedBox(height: 28),
-
+                const SizedBox(height: 24),
+                
                 Center(
                   child: Text('or continue with',
                       style: TextStyle(color: Colors.grey[500])),
                 ),
+                
+                const SizedBox(height: 24),
 
-                const SizedBox(height: 16),
-
-                // Social buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _socialButton(Icons.account_box_rounded, 'Google'),
-                    const SizedBox(width: 16),
-                    _socialButton(Icons.face_rounded, 'Apple'),
-                  ],
-                ).animate().fadeIn(delay: 800.ms, duration: 400.ms),
+                // Google Login Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _loginWithGoogle,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
+                      elevation: 2,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Google G Logo
+                        Image.network(
+                          'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png',
+                          height: 24,
+                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, size: 32, color: Colors.blue),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Sign In with Google',
+                            style: TextStyle(
+                                fontSize: 17, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ).animate().fadeIn(delay: 700.ms, duration: 400.ms),
 
                 const SizedBox(height: 32),
 
+                // Toggle Mode Button
                 Center(
                   child: Wrap(
                     alignment: WrapAlignment.center,
                     crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Text("Don't have an account? ",
+                      Text(_isSignUpMode ? "Already have an account? " : "Don't have an account? ",
                           style: TextStyle(color: Colors.grey[600])),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: _toggleMode,
                         style: TextButton.styleFrom(
                           minimumSize: Size.zero,
                           padding: EdgeInsets.zero,
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
-                        child: const Text('Sign up',
-                            style: TextStyle(fontWeight: FontWeight.w700)),
+                        child: Text(_isSignUpMode ? 'Sign in' : 'Sign up',
+                            style: const TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ],
                   ),
-                ),
+                ).animate().fadeIn(delay: 800.ms, duration: 400.ms),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _socialButton(IconData icon, String label) {
-    return OutlinedButton(
-      onPressed: () {},
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        side: BorderSide(color: Colors.grey[300]!),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: Icon(icon, size: 24, color: AppTheme.onSurface),
     );
   }
 }

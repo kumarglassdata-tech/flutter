@@ -119,20 +119,12 @@ class _FileUploadWidgetState extends State<FileUploadWidget> {
                     color: Colors.black,
                     child: Stack(
                       children: [
-                        if (state.metaFrameBytes != null)
-                          Positioned.fill(
-                            child: Image.memory(
-                              state.metaFrameBytes!,
-                              fit: BoxFit.contain,
-                            ),
-                          )
-                        else
-                          const Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.hourglass_empty_rounded,
+                        const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.hourglass_empty_rounded,
                                   color: Colors.white54,
                                   size: 36,
                                 ),

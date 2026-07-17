@@ -25,7 +25,6 @@ class LocationData {
 }
 
 enum InputSource {
-  META,
   PHONE,
   WEBCAM,
   UPLOAD,

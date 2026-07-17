@@ -104,9 +104,7 @@ class StreamCoordinator extends ChangeNotifier {
       audioBytes: null, // UnifiedInput audioBytes is Uint8List?, AudioChunk has List<double>. Conversion happens elsewhere if needed.
       latitude: _latestLocation?.latitude,
       longitude: _latestLocation?.longitude,
-      source: _sourceManager.activeType == SourceType.meta
-          ? InputSource.META
-          : (_sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK),
+      source: _sourceManager.activeType == SourceType.phone ? InputSource.PHONE : InputSource.MOCK,
       timestamp: DateTime.now(),
       metadata: {
         ...(metadata ?? {}),

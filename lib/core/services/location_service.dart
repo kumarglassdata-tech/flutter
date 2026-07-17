@@ -56,9 +56,10 @@ class LocationService extends ChangeNotifier {
       debugPrint('Error getting initial location: $e');
     }
 
-    const locationSettings = LocationSettings(
+    final locationSettings = AndroidSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
+      distanceFilter: 5,
+      intervalDuration: const Duration(seconds: 5),
     );
     
     _positionSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(

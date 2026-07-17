@@ -60,9 +60,11 @@ flutter {
 }
 
 dependencies {
-    implementation("com.meta.wearable:mwdat-core:0.7.0")
-    implementation("com.meta.wearable:mwdat-camera:0.7.0")
-    implementation("com.meta.wearable:mwdat-mockdevice:0.7.0")
+    implementation(files("libs/LIB_GLASSES_SDK-release_3.aar"))
+    implementation("org.greenrobot:eventbus:3.3.1")
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+    implementation("com.google.code.gson:gson:2.8.9")
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
 }
 
 tasks.configureEach {

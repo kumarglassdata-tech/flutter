@@ -38,6 +38,7 @@ class AudioStreamManager {
   bool _intentionalDisconnect = false;
   String? _currentUrl;
   Timer? _reconnectTimer;
+  Timer? _heartbeatTimer;
 
   // PCM start lock
   Completer<void>? _startCompleter;
@@ -64,6 +65,11 @@ class AudioStreamManager {
   // ---------------------------------------------------------------------------
 
   Future<void> init() async {
+    if (kIsWeb) {
+      debugPrint('[AudioStreamManager] Web platform detected. Skipping native audio and VAD initialization.');
+      return;
+    }
+
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration(
       avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
@@ -110,6 +116,10 @@ class AudioStreamManager {
 
   Future<void> startVad() async {
     if (_vadActive) return;
+    if (kIsWeb) {
+      debugPrint('[AudioStreamManager] VAD is not supported on Web. Use Push-to-Talk.');
+      return;
+    }
     if (!await _audioRecorder.hasPermission()) {
       debugPrint('[AudioStreamManager] Mic permission denied.');
       return;
@@ -320,6 +330,14 @@ class AudioStreamManager {
   void connect(String url) {
     _intentionalDisconnect = false;
     _currentUrl = url;
+    
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (_channel != null) {
+        _safeSinkAdd(jsonEncode({'type': 'ping'}));
+      }
+    });
+
     try {
       _channel?.sink.close();
       _channel = WebSocketChannel.connect(Uri.parse(url));
@@ -394,7 +412,7 @@ class AudioStreamManager {
     if (_intentionalDisconnect) return;
     _channel = null;
     _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 3), () {
+    _reconnectTimer = Timer(const Duration(milliseconds: 500), () {
       if (!_intentionalDisconnect && _currentUrl != null) {
         debugPrint('[AudioStreamManager] Reconnecting...');
         connect(_currentUrl!);
@@ -430,6 +448,7 @@ class AudioStreamManager {
   // ---------------------------------------------------------------------------
 
   void _enqueueAudio(Uint8List chunk) {
+    if (kIsWeb) return; // Ignore PCM chunks on Web (we will use TTS fallback)
     if (_isStopping || !_isPlaying) return;
     _audioQueue.add(chunk);
     _processAudioQueue();
@@ -464,6 +483,7 @@ class AudioStreamManager {
   }
 
   Future<void> _startStream() async {
+    if (kIsWeb) return;
     if (_isPlaying) return;
     if (_startCompleter != null) {
       await _startCompleter!.future;
@@ -483,6 +503,7 @@ class AudioStreamManager {
   }
 
   Future<void> _stopStream() async {
+    if (kIsWeb) return;
     if (!_isPlaying || _isStopping) return;
     _isStopping = true;
     
@@ -500,7 +521,7 @@ class AudioStreamManager {
       await FlutterPcmSound.release();
       await FlutterPcmSound.setup(sampleRate: 16000, channelCount: 1);
     } catch (e) {
-      debugPrint('[AudioStreamManager] Failed to stop PCM stream: $e');
+      debugPrint('[AudioStreamManager] Failed to stop PCM stream: \$e');
     }
     
     // ECHO FIX: The OS audio buffer (AudioTrack) holds ~500ms of audio that 
@@ -525,6 +546,7 @@ class AudioStreamManager {
   Future<void> disconnect() async {
     _intentionalDisconnect = true;
     _reconnectTimer?.cancel();
+    _heartbeatTimer?.cancel();
     try {
       if (_channel != null) {
         await _channel!.sink.close().timeout(const Duration(seconds: 1));
@@ -542,7 +564,9 @@ class AudioStreamManager {
     await stopVad();
     await disconnect();
     await _audioRecorder.dispose();
-    await FlutterPcmSound.release();
+    if (!kIsWeb) {
+      await FlutterPcmSound.release();
+    }
     await _transcriptController.close();
     await _statusController.close();
   }

@@ -20,7 +20,6 @@ import 'widgets/api_connectivity_panel.dart';
 import 'widgets/engine_card.dart';
 import 'widgets/ai_result_card.dart';
 import 'widgets/control_panel.dart';
-import 'widgets/meta_stream_tab.dart';
 import 'widgets/placeholder_tab.dart';
 import 'widgets/normal_user_cards.dart';
 import 'widgets/consumer_analytics_tab.dart';
@@ -87,7 +86,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     final tabs = isAdmin ? [
       'Dashboard',
       'Analytics',
-      settings.useMockMeta ? 'Meta Stream (Mock)' : 'Meta Stream',
       'Stats',
       'Reports',
     ] : [
@@ -124,7 +122,6 @@ class _DashboardScreenState extends State<DashboardScreen>
         children: isAdmin ? [
           _MainDashboardContent(settings: settings),
           const PlaceholderTab(title: 'Analytics'),
-          const MetaStreamTab(),
           const PlaceholderTab(title: 'Stats'),
           const PlaceholderTab(title: 'Reports'),
         ] : [
@@ -155,7 +152,7 @@ class _MainDashboardContent extends StatelessWidget {
           child: ControlPanel(
             isActive: state.isSessionActive,
             onStart: () =>
-                context.read<SessionProvider>().startRuntime(useMock: settings.useMockMeta),
+                context.read<SessionProvider>().startRuntime(),
             onStop: () => context.read<SessionProvider>().stopRuntime(),
           ).animate().fadeIn(duration: 400.ms),
         ),
@@ -221,7 +218,7 @@ class _MainDashboardContent extends StatelessWidget {
                       child: Text(
                         session.sourceManager.activeType == SourceType.mock
                             ? 'Streaming simulated mock data...'
-                            : 'Connected to Meta Glasses feed',
+                            : state.connectedDeviceName != null ? 'Connected to ${state.connectedDeviceName} feed' : 'Connected to stream',
                       ),
                     ),
                   ],

@@ -9,14 +9,15 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:wifi_scan/wifi_scan.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smartglass_flutter/core/services/camera_service.dart';
-import 'package:smartglass_flutter/core/services/meta_glasses_sdk_service.dart';
+import 'package:smartglass_flutter/core/services/titan_sdk_service.dart';
 import 'package:smartglass_flutter/core/services/location_service.dart';
 import 'package:smartglass_flutter/core/services/notification_service.dart' as import_notification;
+import 'package:smartglass_flutter/core/services/glasses_hardware_service.dart';
 
 // Import New Production Architecture
 import 'package:smartglass_flutter/core/sources/source_adapter.dart';
 import 'package:smartglass_flutter/core/sources/source_manager.dart';
-import 'package:smartglass_flutter/core/sources/meta/meta_source_adapter.dart';
+import 'package:smartglass_flutter/core/sources/titan/titan_source_adapter.dart';
 import 'package:smartglass_flutter/core/sources/phone/phone_source_adapter.dart';
 import 'package:smartglass_flutter/core/sources/laptop/laptop_source_adapter.dart';
 import 'package:smartglass_flutter/core/sources/mock/mock_source_adapter.dart';
@@ -51,7 +52,7 @@ enum EngineState { idle, starting, running, stopping, failed }
 
 enum GlassesConnectionState { disconnected, scanning, connecting, connected }
 
-enum DeviceLinkType { ble, classicBt, wifi, metaDat }
+enum DeviceLinkType { ble, classicBt, wifi }
 
 class GlassesDevice {
   final String name;
@@ -101,9 +102,6 @@ class SessionState {
   final double? latitude;
   final double? longitude;
   final String? city;
-  final bool metaSdkAvailable;
-  final bool usingRealMetaStream;
-  final Uint8List? metaFrameBytes;
   final ContextEngineOutput? lastContextOutput;
   final BIEFrame? lastBIEFrame;
   final InteractionResponse? lastInteractionResponse;
@@ -113,6 +111,12 @@ class SessionState {
   final List<EcomAdProduct> suggestedProducts;
   final Map<String, EngineStatus> engineStatuses;
   final List<ApiHealth> apiHealths;
+  final int batteryLevel;
+  final bool isWearing;
+  final bool isVideoRecording;
+  final double volumeLevel;
+  final double videoDownloadProgress;
+  final List<String> importedAlbums;
 
   const SessionState({
     this.isSessionActive = false,
@@ -140,11 +144,14 @@ class SessionState {
     this.latitude,
     this.longitude,
     this.city,
-    this.metaSdkAvailable = false,
-    this.usingRealMetaStream = false,
-    this.metaFrameBytes,
     this.lastContextOutput,
     this.lastBIEFrame,
+    this.batteryLevel = 0,
+    this.isWearing = false,
+    this.isVideoRecording = false,
+    this.volumeLevel = 0.5,
+    this.videoDownloadProgress = 0.0,
+    this.importedAlbums = const [],
     this.lastInteractionResponse,
     this.lastEcomResponse,
     this.lastMemoryResponse,
@@ -190,9 +197,6 @@ class SessionState {
     double? longitude,
     String? city,
     String? lastHealthMessage,
-    bool? metaSdkAvailable,
-    bool? usingRealMetaStream,
-    Uint8List? metaFrameBytes,
     ContextEngineOutput? lastContextOutput,
     BIEFrame? lastBIEFrame,
     InteractionResponse? lastInteractionResponse,
@@ -202,6 +206,12 @@ class SessionState {
     List<EcomAdProduct>? suggestedProducts,
     Map<String, EngineStatus>? engineStatuses,
     List<ApiHealth>? apiHealths,
+    int? batteryLevel,
+    bool? isWearing,
+    bool? isVideoRecording,
+    double? volumeLevel,
+    double? videoDownloadProgress,
+    List<String>? importedAlbums,
   }) {
     return SessionState(
       isSessionActive: isSessionActive ?? this.isSessionActive,
@@ -229,9 +239,6 @@ class SessionState {
       longitude: longitude ?? this.longitude,
       city: city ?? this.city,
       lastHealthMessage: lastHealthMessage ?? this.lastHealthMessage,
-      metaSdkAvailable: metaSdkAvailable ?? this.metaSdkAvailable,
-      usingRealMetaStream: usingRealMetaStream ?? this.usingRealMetaStream,
-      metaFrameBytes: metaFrameBytes ?? this.metaFrameBytes,
       lastContextOutput: lastContextOutput ?? this.lastContextOutput,
       lastBIEFrame: lastBIEFrame ?? this.lastBIEFrame,
       lastInteractionResponse: lastInteractionResponse ?? this.lastInteractionResponse,
@@ -241,6 +248,12 @@ class SessionState {
       suggestedProducts: suggestedProducts ?? this.suggestedProducts,
       engineStatuses: engineStatuses ?? this.engineStatuses,
       apiHealths: apiHealths ?? this.apiHealths,
+      batteryLevel: batteryLevel ?? this.batteryLevel,
+      isWearing: isWearing ?? this.isWearing,
+      isVideoRecording: isVideoRecording ?? this.isVideoRecording,
+      volumeLevel: volumeLevel ?? this.volumeLevel,
+      videoDownloadProgress: videoDownloadProgress ?? this.videoDownloadProgress,
+      importedAlbums: importedAlbums ?? this.importedAlbums,
     );
   }
 }
@@ -251,7 +264,7 @@ class SessionState {
 
 class SessionProvider extends ChangeNotifier {
   final CameraService _cameraService;
-  final MetaGlassesSdkService _metaSdkService;
+  final TitanSdkService _titanSdkService;
   final LocationService _locationService;
 
   SessionState _state = const SessionState();
@@ -259,6 +272,7 @@ class SessionProvider extends ChangeNotifier {
   bool _isConnecting = false;
   bool _isStartingRuntime = false;
   late final VideoUploadSourceAdapter _videoUploadAdapter;
+  late final GlassesHardwareService hardwareService;
   Timer? _healthProbeTimer;
   DateTime? _lastNotificationTime;
 
@@ -278,22 +292,129 @@ class SessionProvider extends ChangeNotifier {
   bool get isConnecting => _isConnecting;
   bool get isStartingRuntime => _isStartingRuntime;
 
-  static const _registeredMetaName = 'RB Meta019G';
-  static const _registeredMetaAddress = 'meta-rb-019g';
+  String? _savedMacAddress;
 
   SessionProvider(
     this._cameraService, {
-    MetaGlassesSdkService? metaSdkService,
+    TitanSdkService? titanSdkService,
     LocationService? locationService,
-  })  : _metaSdkService = metaSdkService ?? const MetaGlassesSdkService(),
+  })  : _titanSdkService = titanSdkService ?? TitanSdkService(),
         _locationService = locationService ?? LocationService() {
     _cameraService.addListener(_syncNewArchitecture);
     _loadSavedProducts();
     _locationService.addListener(_syncNewArchitecture);
     _locationService.addListener(_syncLocationWithInteractionEngine);
 
-    _initNewArchitecture();
+    _initSavedMac();
+
+    if (!kIsWeb) {
+      hardwareService = GlassesHardwareService();
+      hardwareService.events.listen(_onHardwareEvent);
+
+      _initNewArchitecture();
+    }
   }
+
+  Future<void> _initSavedMac() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _savedMacAddress = prefs.getString('last_connected_mac');
+    } catch (e) {
+      debugPrint('Error loading saved MAC: $e');
+    }
+  }
+
+  void _onHardwareEvent(GlassesHardwareEvent event) {
+    print('DEBUG _onHardwareEvent: received ${event.runtimeType}');
+    if (event is ConnectionStateEvent) {
+      print('DEBUG _onHardwareEvent: ConnectionStateEvent isConnected=${event.isConnected} address=${event.address}');
+      _isConnecting = false;
+      if (event.isConnected) {
+        _state = _state.copyWith(
+          bleConnectionState: GlassesConnectionState.connected,
+          glassesState: EngineState.running,
+        );
+        _addLog('Hardware connected to ${event.address}');
+        print('DEBUG _onHardwareEvent: State set to CONNECTED');
+        hardwareService.enableDataServices(); // auto-enable services upon connection!
+      } else {
+        _state = _state.copyWith(
+          bleConnectionState: GlassesConnectionState.disconnected,
+          glassesState: EngineState.idle,
+        );
+        _addLog('Hardware disconnected from ${event.address}');
+        print('DEBUG _onHardwareEvent: State set to DISCONNECTED');
+      }
+      notifyListeners();
+      } else if (event is DeviceFoundEvent) {
+        final nameUpper = event.name.toUpperCase();
+        final isValidName = nameUpper.contains('TITAN') || 
+                            nameUpper.contains('FASTRACK') || 
+                            nameUpper.contains('SMART') || 
+                            nameUpper.contains('MYNA') ||
+                            nameUpper.contains('GLASS') ||
+                            nameUpper.contains('UNKNOWN');
+                            
+        // Reject generic BLE noise
+        if (!isValidName) {
+          debugPrint('Rejected device: ${event.name} [${event.address}]');
+          return;
+        }
+
+        /* Auto-connect commented out for now
+        if (_savedMacAddress != null && event.address == _savedMacAddress) {
+          if (_state.bleConnectionState != GlassesConnectionState.connected && !_isConnecting) {
+            _addLog('Auto-reconnecting to known device: ${event.name}');
+            hardwareService.stopScan();
+            connectToDevice(event.address);
+          }
+          return;
+        }
+        */
+
+        _addLog('Native SDK found device: ${event.name} [${event.address}]');
+        
+        // Add native SDK device to the UI list if it doesn't already exist
+        final exists = _state.discoveredDevices.any((d) => d.address == event.address);
+        if (!exists) {
+          final newDevice = GlassesDevice(
+            name: event.name,
+            address: event.address,
+            rssi: event.rssi,
+            linkType: DeviceLinkType.ble,
+          );
+          _state = _state.copyWith(
+            discoveredDevices: List.from(_state.discoveredDevices)..add(newDevice)
+          );
+          notifyListeners();
+        }
+      } else if (event is BatteryLevelEvent) {
+        _state = _state.copyWith(batteryLevel: event.level);
+        notifyListeners();
+        _addLog('🔋 Battery: ${event.level}%');
+      } else if (event is PhotoChunkEvent) {
+        _addLog('📸 Photo chunk received: ${event.bytes.length} bytes');
+      } else if (event is WearStateEvent) {
+        _state = _state.copyWith(isWearing: event.isWearing);
+        notifyListeners();
+        _addLog(event.isWearing ? '👓 Glasses are being worn' : '👓 Glasses removed');
+      } else if (event is VideoDownloadProgressEvent) {
+        _state = _state.copyWith(videoDownloadProgress: event.progress);
+        notifyListeners();
+      } else if (event is VideoFileDownloadedEvent) {
+        final newAlbums = List<String>.from(_state.importedAlbums)..add(event.filePath);
+        _state = _state.copyWith(
+          videoDownloadProgress: 1.0,
+          importedAlbums: newAlbums,
+        );
+        notifyListeners();
+        _addLog('✅ Video downloaded: ${event.filePath}');
+      } else if (event is VideoDownloadErrorEvent) {
+        _state = _state.copyWith(videoDownloadProgress: 0.0);
+        notifyListeners();
+        _addLog('❌ Video download error: ${event.error}');
+      }
+    }
 
   Future<void> _loadSavedProducts() async {
     try {
@@ -309,7 +430,6 @@ class SessionProvider extends ChangeNotifier {
           notifyListeners();
         }
       }
-    } catch (e) {
     } catch (e) {
       print('Failed to load saved products: $e');
     }
@@ -339,10 +459,6 @@ class SessionProvider extends ChangeNotifier {
   void _initNewArchitecture() {
     // 1. Initialize Adapters
     final mockAdapter = MockSourceAdapter();
-    final metaAdapter = MetaSourceAdapter(
-      metaSdk: _metaSdkService,
-      location: _locationService,
-    );
     final phoneAdapter = PhoneSourceAdapter(
       camera: _cameraService,
       location: _locationService,
@@ -354,7 +470,6 @@ class SessionProvider extends ChangeNotifier {
 
     sourceManager = SourceManager({
       SourceType.mock: mockAdapter,
-      SourceType.meta: metaAdapter,
       SourceType.phone: phoneAdapter,
       SourceType.laptop: laptopAdapter,
       SourceType.videoUpload: _videoUploadAdapter,
@@ -459,7 +574,10 @@ class SessionProvider extends ChangeNotifier {
     audioStreamManager.transcriptStream.listen((text) async {
       if (text.isNotEmpty && text != _lastSpokenUtterance) {
         _lastSpokenUtterance = text;
-        // DO NOT echo the user's text: flutterTts.speak(_lastSpokenUtterance);
+        // Since Web can't play raw PCM stream, use TTS as fallback
+        if (kIsWeb) {
+          flutterTts.speak(_lastSpokenUtterance);
+        }
       }
 
       if (_state.lastInteractionResponse != null) {
@@ -571,106 +689,75 @@ class SessionProvider extends ChangeNotifier {
   CameraService get cameraService => _cameraService;
 
   Future<void> startDiscovery() async {
+    if (_state.bleConnectionState == GlassesConnectionState.scanning) {
+      print('DEBUG: Already scanning, ignoring startDiscovery call.');
+      return;
+    }
+
+    if (!kIsWeb) {
+      if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
+        await Permission.locationWhenInUse.request();
+      }
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await Permission.bluetoothScan.request();
+        await Permission.bluetoothConnect.request();
+      }
+    }
+
     _scanStatus = 'Scanning nearby devices…';
-    notifyListeners();
-
-    final sdkAvailable = await _metaSdkService.isSdkAvailable();
     _state = _state.copyWith(
-      bleConnectionState: GlassesConnectionState.scanning,
-      metaSdkAvailable: sdkAvailable,
+        bleConnectionState: GlassesConnectionState.scanning,
+        discoveredDevices: [] // Clear previously discovered devices on new scan
     );
     notifyListeners();
-
-    // Query native Meta SDK devices
-    final sdkMetaDevices = <GlassesDevice>[];
-    if (sdkAvailable) {
-      try {
-        final sdkDevices = await _metaSdkService.getMetaDevices();
-        for (final d in sdkDevices) {
-          final address = d['address'] ?? '';
-          final name = d['name'] ?? 'Ray-Ban Meta';
-          if (address.isNotEmpty) {
-            sdkMetaDevices.add(GlassesDevice(
-              name: name,
-              address: address,
-              isBonded: true,
-              rssi: -52,
-              linkType: DeviceLinkType.metaDat,
-            ));
-          }
-        }
-      } catch (e) {
-        _addLog('Error querying Meta SDK devices: $e');
+    
+    // Stop any existing scans to prevent SCAN_FAILED_ALREADY_STARTED (Error 0)
+    if (!kIsWeb) {
+      hardwareService.stopScan();
+      await Future.delayed(const Duration(milliseconds: 300));
+      hardwareService.startScan();
+    }
+    
+    // Stop native scan when flutter finishes its timeout (increased to 30 seconds to give ample time)
+    Future.delayed(const Duration(seconds: 30), () {
+      if (_state.bleConnectionState == GlassesConnectionState.scanning) {
+        if (!kIsWeb) hardwareService.stopScan();
+        _state = _state.copyWith(bleConnectionState: GlassesConnectionState.disconnected);
+        _scanStatus = 'Scan complete.';
+        _addLog(_scanStatus);
+        notifyListeners();
       }
-    }
+    });
+  }
 
-    final retained = <GlassesDevice>[];
-    for (final device in _state.discoveredDevices) {
-      if (device.name == _state.connectedDeviceName && _state.bleConnectionState == GlassesConnectionState.connected) {
-        retained.add(device);
-      }
-    }
-
-    final baseMetaDevices = <GlassesDevice>[];
-    baseMetaDevices.addAll(retained);
-    baseMetaDevices.addAll(sdkMetaDevices);
-
-    final hasMeta = baseMetaDevices.any((d) => d.address == _registeredMetaAddress || d.name == _registeredMetaName || d.name.contains('Meta') || d.name.contains('RB'));
-    if (!hasMeta && sdkAvailable && _metaSdkService.supportsNativeSdk) {
-      baseMetaDevices.add(const GlassesDevice(
-        name: _registeredMetaName,
-        address: _registeredMetaAddress,
-        isBonded: true,
-        rssi: -55,
-        linkType: DeviceLinkType.metaDat,
-      ));
-    }
-
-    final rawBle = await _scanBluetoothDevices();
-    final wifi = await _scanWifiDevices();
-
-    final normalized = <String, GlassesDevice>{};
-    for (final dev in wifi) {
-      normalized[dev.address] = dev;
-    }
-    for (final dev in baseMetaDevices) {
-      normalized[dev.address] = dev;
-    }
-
-    for (final dev in rawBle) {
-      final isBleMeta = dev.name.contains('Meta') || dev.name.contains('RB') || dev.name.contains('Ray-Ban');
-      if (isBleMeta && sdkAvailable) {
-        continue;
-      }
-      if (!normalized.containsKey(dev.address)) {
-        normalized[dev.address] = dev;
-      }
-    }
-
-    _state = _state.copyWith(
-      discoveredDevices: normalized.values.toList(),
-      bleConnectionState: GlassesConnectionState.disconnected,
-    );
-
-    if (!sdkAvailable) {
-      _scanStatus = 'Scan complete. Meta SDK is unavailable on this device.';
-    } else if (sdkMetaDevices.isEmpty) {
-      _scanStatus = 'No Meta SDK devices discovered. Open Meta View app and ensure glasses are paired.';
-    } else {
-      _scanStatus = 'Found ${sdkMetaDevices.length} registered Meta SDK device(s) and ${normalized.length - sdkMetaDevices.length} other devices.';
-    }
+  Future<void> stopDiscovery() async {
+    if (_state.bleConnectionState != GlassesConnectionState.scanning) return;
+    if (!kIsWeb) hardwareService.stopScan();
+    _state = _state.copyWith(bleConnectionState: GlassesConnectionState.disconnected);
+    _scanStatus = 'Scan stopped.';
     _addLog(_scanStatus);
     notifyListeners();
   }
 
   Future<List<GlassesDevice>> _scanBluetoothDevices() async {
-    if (kIsWeb) return const [];
+    if (kIsWeb) {
+      return const [
+        GlassesDevice(
+          name: 'Titan Web Simulator',
+          address: 'WEB:00:11:22',
+          isBonded: false,
+          rssi: -40,
+          linkType: DeviceLinkType.ble,
+        )
+      ];
+    }
     try {
-      await Permission.bluetoothScan.request();
-      await Permission.bluetoothConnect.request();
-      if (defaultTargetPlatform == TargetPlatform.android ||
-          defaultTargetPlatform == TargetPlatform.iOS) {
+      if (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS) {
         await Permission.locationWhenInUse.request();
+      }
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await Permission.bluetoothScan.request();
+        await Permission.bluetoothConnect.request();
       }
 
       final discovered = <String, GlassesDevice>{};
@@ -682,6 +769,12 @@ class SessionProvider extends ChangeNotifier {
               : (result.advertisementData.advName.trim().isNotEmpty
                   ? result.advertisementData.advName.trim()
                   : 'BLE Device');
+
+          final nameUpper = name.toUpperCase();
+          if (nameUpper == 'BLE DEVICE') {
+            continue; // Drop completely nameless devices to avoid flooding, but allow UNKNOWN glasses
+          }
+
           discovered[id] = GlassesDevice(
             name: name,
             address: id,
@@ -745,67 +838,127 @@ class SessionProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> syncBattery() async {
+    if (!kIsWeb) hardwareService.syncBattery();
+    _addLog('🔋 Syncing battery...');
+    notifyListeners();
+  }
+  
+  Future<void> importAlbums() async {
+    if (!kIsWeb) {
+      if (Platform.isAndroid) {
+        final statuses = await [
+          Permission.location,
+          Permission.nearbyWifiDevices,
+        ].request();
+        _addLog('Location permission: ${statuses[Permission.location]}');
+        _addLog('Nearby WiFi permission: ${statuses[Permission.nearbyWifiDevices]}');
+      }
+      hardwareService.importVideoAlbum();
+    }
+    _addLog('📥 Importing video album...');
+    notifyListeners();
+  }
+
+  Future<void> capturePhoto() async {
+    if (!kIsWeb) hardwareService.capturePhoto();
+    _addLog('📸 Capturing photo...');
+    notifyListeners();
+  }
+
+  Future<void> setVolume(double level) async {
+    _state = _state.copyWith(volumeLevel: level.clamp(0.0, 1.0));
+    notifyListeners();
+    if (!kIsWeb) hardwareService.setVolume(level);
+    _addLog('🔊 Volume set to ${(level * 100).round()}%');
+  }
+
+  Future<void> startVideoRecording() async {
+    if (!kIsWeb) hardwareService.startVideoRecording();
+    _state = _state.copyWith(isVideoRecording: true);
+    _addLog('🎥 Video recording started');
+    notifyListeners();
+  }
+
+  Future<void> stopVideoRecording() async {
+    if (!kIsWeb) hardwareService.stopVideoRecording();
+    _state = _state.copyWith(isVideoRecording: false);
+    _addLog('🎥 Video recording stopped');
+    notifyListeners();
+  }
+
   Future<void> connectToDevice(String address, {bool useMock = false}) async {
-    if (_isConnecting) return;
+    print('DEBUG: connectToDevice called with address: $address, isConnecting: $_isConnecting');
+    if (_isConnecting) {
+      print('DEBUG: Aborting connectToDevice because _isConnecting is already true!');
+      return;
+    }
     _isConnecting = true;
+    
+    final device = _state.discoveredDevices.where((d) => d.address == address).firstOrNull;
+    _state = _state.copyWith(
+      bleConnectionState: GlassesConnectionState.connecting,
+      connectedDeviceName: device?.name,
+    );
     notifyListeners();
 
     try {
-      final device = _state.discoveredDevices.where((d) => d.address == address).firstOrNull;
-      _state = _state.copyWith(
-        bleConnectionState: GlassesConnectionState.connecting,
-        connectedDeviceName: device?.name,
-      );
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_connected_mac', address);
+      _savedMacAddress = address;
+
+      print('DEBUG: State updated to connecting for ${device?.name ?? address}');
       _addLog('Connecting to ${device?.name ?? address}…');
       notifyListeners();
-
-      final targetName = device?.name ?? '';
-      final isMetaTarget = targetName.contains('RB') || targetName.contains('Meta') || address.contains('meta');
-
-      if (isMetaTarget) {
-        await sourceManager.switchSource(useMock ? SourceType.mock : SourceType.meta);
-      } else {
-        await sourceManager.switchSource(SourceType.phone);
+      try {
+        await sourceManager.switchSource(SourceType.phone); // Temporary fallback video source
+      } catch (e) {
+        print('DEBUG: sourceManager.switchSource failed: $e. Continuing with BLE connection anyway.');
       }
-
-      await Future.delayed(const Duration(seconds: 1));
-      _state = _state.copyWith(
-        bleConnectionState: GlassesConnectionState.connected,
-        glassesState: EngineState.running,
-      );
-      _addLog('Connected to ${device?.name ?? address}');
-    } catch (e) {
+      print('DEBUG: Checking mock and web status: useMock=$useMock, kIsWeb=$kIsWeb');
+      if (!useMock && !kIsWeb) {
+        print('DEBUG: Invoking hardwareService.connect($address)');
+        _addLog('Delegating connection to GlassesHardwareService for $address...');
+        await hardwareService.connect(address);
+      } else {
+        await Future.delayed(const Duration(seconds: 1));
+        _state = _state.copyWith(
+          bleConnectionState: GlassesConnectionState.connected,
+          glassesState: EngineState.running,
+        );
+        _addLog('Connected to ${device?.name ?? address} (Simulated)');
+      }
+      print('DEBUG: connectToDevice try block completed successfully');
+    } catch (e, stack) {
+      print('DEBUG: Exception in connectToDevice: $e\n$stack');
       _addLog('Connection failed: $e');
       _state = _state.copyWith(
         bleConnectionState: GlassesConnectionState.disconnected,
         glassesState: EngineState.failed,
       );
-    } finally {
       _isConnecting = false;
       notifyListeners();
     }
-  }
-
-  Future<void> connectToMetaGlasses({bool useMock = false}) async {
-    await sourceManager.switchSource(useMock ? SourceType.mock : SourceType.meta);
-    _state = _state.copyWith(
-      bleConnectionState: GlassesConnectionState.connected,
-      glassesState: EngineState.running,
-      connectedDeviceName: useMock ? 'MOCK GLASSES' : 'RB META GLASSES',
-    );
-    _addLog('Connected to Meta glasses');
-    notifyListeners();
-  }
-
-  Future<GlassesDevice> registerMetaGlasses() async {
-    _addLog('Meta registration complete.');
-    return const GlassesDevice(
-      name: _registeredMetaName,
-      address: _registeredMetaAddress,
-      isBonded: true,
-      rssi: -55,
-      linkType: DeviceLinkType.metaDat,
-    );
+    
+    // Set a timeout to clear the connecting state if native SDK doesn't respond
+    // Increased to 45 seconds to allow ample time for OS-level Bluetooth Pairing/Bonding dialogs!
+    if (!useMock && !kIsWeb) {
+      Future.delayed(const Duration(seconds: 45), () {
+        if (_state.bleConnectionState == GlassesConnectionState.connecting) {
+          print('DEBUG: 45 second timeout hit!');
+          _isConnecting = false;
+          _state = _state.copyWith(
+            bleConnectionState: GlassesConnectionState.disconnected,
+            glassesState: EngineState.failed,
+          );
+          _addLog('Connection timed out.');
+          notifyListeners();
+        }
+      });
+    } else {
+      _isConnecting = false;
+      notifyListeners();
+    }
   }
 
   Future<void> startRuntime({bool useMock = false}) async {
@@ -817,8 +970,6 @@ class SessionProvider extends ChangeNotifier {
       _addLog('Starting real-time stream coordinator...');
       if (useMock) {
         await sourceManager.switchSource(SourceType.mock);
-      } else if (sourceManager.activeType == SourceType.meta) {
-        await sourceManager.switchSource(SourceType.meta);
       } else if (sourceManager.activeType == SourceType.videoUpload) {
         // Keep active source as video upload
       } else if (sourceManager.activeType == SourceType.laptop) {
@@ -843,6 +994,14 @@ class SessionProvider extends ChangeNotifier {
 
   Future<void> stopRuntime() async {
     _addLog('Stopping real-time stream coordinator...');
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('last_connected_mac');
+      _savedMacAddress = null;
+      await hardwareService.disconnect();
+    } catch (e) {
+      debugPrint('Error disconnecting hardware: $e');
+    }
     try {
       await _cameraService.stopStreaming().timeout(const Duration(seconds: 2));
     } catch (e) {
@@ -1040,7 +1199,6 @@ class SessionProvider extends ChangeNotifier {
     final frameBytes = latestFrame?.bytes;
 
     _state = _state.copyWith(
-      metaFrameBytes: frameBytes,
       isSessionActive: streamCoordinator.isRunning,
       latitude: _locationService.latitude,
       longitude: _locationService.longitude,
@@ -1051,20 +1209,15 @@ class SessionProvider extends ChangeNotifier {
           healthMonitor.interactionState == CircuitState.open ||
           healthMonitor.ecomState == CircuitState.open ||
           healthMonitor.memoryState == CircuitState.open,
-      glassesState: sourceManager.activeType == SourceType.meta
-          ? (health.status == SourceHealthStatus.healthy ? EngineState.running : EngineState.failed)
-          : EngineState.idle,
+      // IMPORTANT: Do NOT overwrite glassesState, bleConnectionState, connectedDeviceName, or bleRssi here.
+      // Those are managed by _onHardwareEvent and connectToDevice. Overwriting them here
+      // was the root cause of the "dashboard never shows connected" bug.
       mediaState: streamCoordinator.isRunning ? EngineState.running : EngineState.idle,
       aiState: getEngineState(healthMonitor.contextState),
       mediaFps: telemetry.fps,
       aiThroughputFps: telemetry.fps,
       aiLatencyMs: lastLatency,
       rttMs: rtt,
-      bleRssi: sourceManager.activeType == SourceType.meta ? -55 : 0,
-      connectedDeviceName: sourceManager.activeType.name.toUpperCase(),
-      bleConnectionState: sourceManager.activeType == SourceType.meta
-          ? (health.status == SourceHealthStatus.healthy ? GlassesConnectionState.connected : GlassesConnectionState.connecting)
-          : GlassesConnectionState.disconnected,
       framesEmitted: telemetry.capturedFrames,
       framesDropped: telemetry.droppedFrames,
       aiFramesSkipped: telemetry.droppedFrames,

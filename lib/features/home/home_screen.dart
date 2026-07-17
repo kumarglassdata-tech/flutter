@@ -128,6 +128,15 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text('Home', style: TextStyle(fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync email backend api',
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Syncing with email backend api...'))
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.notifications_rounded),
             onPressed: () {},
           ),
